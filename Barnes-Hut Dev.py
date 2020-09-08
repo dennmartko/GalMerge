@@ -1,6 +1,19 @@
 import numpy as np
 from matplotlib.pyplot import figure, show
 
+#Prototype of a cell object
+class Cell:
+    def __init__(self):
+        self.parent = None #parent of the current cell 
+        
+        #Physical quantities
+        self.M = None #total mass contained within the cell
+        self.R_CM = None #location of the center of mass of the cell
+
+        #Geometrical quantities
+        self.midR = None #coordinate location of the cell's center
+        self.L = None #length of the cell's sides
+
 if __name__ == "__main__":
     x, y = (20*np.random.random(size=10)-10, 20*np.random.random(size=10)-10)
     
