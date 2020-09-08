@@ -1,2 +1,2 @@
 import numpy as np
-import scipy as sc
+import scipy as scl
