@@ -2,7 +2,6 @@ import numpy as np
 import time
 import matplotlib
 
-
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
 
@@ -63,11 +62,7 @@ def Tree(root, particles):
 
     # If theres more than one particle in a node, we can create new nodes!
     if pcount > 1:
-        print(rdd1) # redundant particles in the new node of quadrant 1
-        print(len(particles1)) # Status amount of particles left in quadrant 1
-
         # np.delete() does not work with empty lists
-
         if len(rdd1) != 0:
             particles1 = np.delete(particles1, rdd1,axis=0)
 
@@ -80,8 +75,6 @@ def Tree(root, particles):
         if len(rdd4) != 0:
             particles4 = np.delete(particles4, rdd4,axis=0)
 
-        print(len(particles1)) # check how much particles are left after removing redundant particles
-
         # CREATE THE NODES! and assign the correct particles to the nodes
         Tree(Cell(root.midR + np.array([-root.L / 4,root.L / 4]),root.L / 2,parent=root),particles1)
         Tree(Cell(root.midR + np.array([root.L / 4,root.L / 4]),root.L / 2,parent=root),particles2)
@@ -91,25 +84,24 @@ def Tree(root, particles):
 
 
 def TreePlotter(trees, particles):
-
     fig = figure(figsize=(10, 10))
     frame = fig.add_subplot(1,1,1)
     frame.set_xlim(-10, 10)
     frame.set_ylim(-10, 10)
-    frame.scatter([particles[i][0] for i in range(100000)],[particles[i][1] for i in range(100000)], color='k')
+    frame.scatter([particles[i][0] for i in range(len(particles))],[particles[i][1] for i in range(len(particles))], color='k')
     for o in trees:
-        #plt.scatter(o.midR[0],o.midR[1])
-
         rect = matplotlib.patches.Rectangle((o.midR[0]-o.L/2,o.midR[1]-o.L/2), width=o.L,height=o.L,fill=False)
         frame.add_patch(rect)
 
     frame.set_xlabel(r"$x$", fontsize=16)
     frame.set_ylabel(r"$y$", fontsize=16)
-    show()
+    show() 
 
 
 if __name__ == "__main__":
-    particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(100000)]
+    Nparticles = 10000
+
+    particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(Nparticles)]
 
     obj = []
 
@@ -126,4 +118,4 @@ if __name__ == "__main__":
     print("MINIMUM LENGTH IS: ",np.min(lengths))
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end-start, "SECONDS!")
 
-    TreePlotter(obj, particles)
+    #TreePlotter(obj, particles)
