@@ -1,5 +1,7 @@
 import numpy as np
 import time
+from matplotlib import pyplot as plt
+
 from matplotlib.pyplot import figure, show
 
 #Prototype of a cell object
@@ -31,13 +33,14 @@ def Tree(root, particles):
     rdd3 = []
     rdd4 = []
 
+    '''
     # When we start we just create 4 nodes straight away.
     if root.parent == None: 
         Tree(Cell(root.midR + np.array([-root.L / 2,root.L / 2]),root.L / 2,parent=root),particles)
         Tree(Cell(root.midR + np.array([root.L / 2,root.L / 2]),root.L / 2,parent=root),particles)
         Tree(Cell(root.midR + np.array([root.L / 2,-root.L / 2]),root.L / 2,parent=root),particles)
         Tree(Cell(root.midR + np.array([-root.L / 2,-root.L / 2]),root.L / 2,parent=root),particles)
-
+    '''
     # Init
     pcount = 0
 
@@ -92,6 +95,22 @@ def Tree(root, particles):
         Tree(Cell(root.midR + np.array([-root.L / 2,-root.L / 2]),root.L / 2,parent=root),particles4)
 
 
+
+def TreePlotter(trees, particles):
+    fig = figure(figsize=(10, 10))
+    frame = fig.add_subplot(1,1,1,aspect='equal')
+    frame.scatter([particles[i][0] for i in range(100)],[particles[i][1] for i in range(100)], color='k')
+    for o in trees:
+        frame.axvline(x=o.midR[0],ymin=o.midR[1] - o.L,ymax=o.midR[1]+o.L, color='red')
+        frame.axhline(y=o.midR[1],xmin=o.midR[0]- o.L,xmax=o.midR[0]+o.L,color='red')
+
+    frame.set_xlim(-10, 10)
+    frame.set_ylim(-10, 10)
+    frame.set_xlabel(r"$x$", fontsize=16)
+    frame.set_ylabel(r"$y$", fontsize=16)
+    show()
+
+
 if __name__ == "__main__":
     particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(100)]
 
@@ -117,3 +136,4 @@ if __name__ == "__main__":
     lengths = [o.L for o in obj]
     print("MINIMUM LENGTH IS: ",np.min(lengths))
 
+    TreePlotter(obj, particles)
