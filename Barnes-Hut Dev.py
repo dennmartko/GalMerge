@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib.pyplot import figure, show
+import time
 
 #Prototype of a cell object
 class Cell:
@@ -38,7 +39,7 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
 
     N = len(tmp_r) #number of particles already in the cell
 
-    for i in range(indx, len(r)):
+    for i in range(indx, len(r)+1):
 
         #if N = 2 then the cell is full -> we need to split
         if N == 2:
@@ -62,11 +63,13 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
             build_tree(r, nodes, leaves, midR + np.array([-L/4, L/4]), L/2, parent=nodes[-1], indx=i, tmp_r=tmp_r2)
             build_tree(r, nodes, leaves, midR + np.array([-L/4, -L/4]), L/2, parent=nodes[-1], indx=i, tmp_r=tmp_r3)
             build_tree(r, nodes, leaves, midR + np.array([L/4, -L/4]), L/2, parent=nodes[-1], indx=i, tmp_r=tmp_r4)
+            break
         
         #if a particle is in the cell it is added to tmp_r and N is incremented with 1
-        if inCell(r[i], ival):
-            N += 1
-            tmp_r.append(r[i])
+        if i != len(r):
+            if inCell(r[i], ival):
+                N += 1
+                tmp_r.append(r[i])
     
     #if we exited the for loop and N is still 1 we have found a leaf else if N = 0 no particles are in this cell so we delete it.
     if N == 1:
@@ -75,7 +78,7 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
         del nodes[-1] #no particles in this cell wherefore it is removed
 
 if __name__ == "__main__":
-    r = np.array([20*np.random.random(size=10)-10, 20*np.random.random(size=10)-10]).T
+    r = np.array([20*np.random.random(size=100000)-10, 20*np.random.random(size=100000)-10]).T
     
     nodes = []
     leaves = []
@@ -83,13 +86,15 @@ if __name__ == "__main__":
     midR = np.array([0., 0.])
 
     #build the hierarchical tree of cells
+    s = time.time()
     build_tree(r, nodes, leaves, midR, L)
+    print(f"Duration {time.time()-s} seconds.")
     
-    print(leaves, len(leaves))
+    #print(leaves, len(leaves))
 
     fig = figure(figsize=(10, 10))
     frame = fig.add_subplot(1,1,1)
-    frame.scatter(r[:,0], r[:,1], color='k')
+    frame.scatter(r[:,0], r[:,1], color='k', s=1)
 
     for leaf in leaves:
         frame.axhline(y=leaf.midR[1]-leaf.L/2, xmin=(leaf.midR[0]-leaf.L/2+L/2)/L, xmax=(leaf.midR[0]+leaf.L/2+L/2)/L)
