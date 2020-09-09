@@ -111,7 +111,6 @@ if __name__ == "__main__":
     Tree(ROOT, particles)
     end = time.time()
 
-    time.sleep(1) # print fix
     print("\nTOTAL AMOUNT OF NODES: ",len(obj))
     
     # Sort the obj array for leaves upto root
