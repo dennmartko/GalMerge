@@ -99,13 +99,14 @@ def TreePlotter(trees, particles):
 
 
 if __name__ == "__main__":
-    Nparticles = 10000
+    Nparticles = 1000
 
     particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(Nparticles)]
 
     obj = []
+    L = 20
 
-    ROOT = Cell(np.array([0,0]),20,parent=None)
+    ROOT = Cell(np.array([0,0]),L,parent=None)
     start = time.time()
     Tree(ROOT, particles)
     end = time.time()
@@ -113,9 +114,12 @@ if __name__ == "__main__":
     time.sleep(1) # print fix
     print("\nTOTAL AMOUNT OF NODES: ",len(obj))
     
-    # Test print all lengths of objects
+    # Sort the obj array for leaves upto root
+    obj.sort(key=lambda o: o.L)
     lengths = [o.L for o in obj]
     print("MINIMUM LENGTH IS: ",np.min(lengths))
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end-start, "SECONDS!")
 
+    # TURN OFF IF SPAMMY
+    print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     #TreePlotter(obj, particles)
