@@ -83,14 +83,18 @@ def Tree(root, particles):
 
 
 
-def TreePlotter(trees, particles):
+def TreePlotter(cells, particles):
+    rectStyle = dict(fill=False, ec='k', lw=2)
+    scatterStyle = dict(color='k', s=2)
+
     fig = figure(figsize=(10, 10))
-    frame = fig.add_subplot(1,1,1)
+    frame = fig.add_subplot(111)
     frame.set_xlim(-10, 10)
     frame.set_ylim(-10, 10)
-    frame.scatter([particles[i][0] for i in range(len(particles))],[particles[i][1] for i in range(len(particles))], color='k')
-    for o in trees:
-        rect = matplotlib.patches.Rectangle((o.midR[0]-o.L/2,o.midR[1]-o.L/2), width=o.L,height=o.L,fill=False)
+    frame.scatter(particles[:,0], particles[:,1], **scatterStyle)
+
+    for o in cells:
+        rect = matplotlib.patches.Rectangle((o.midR[0]-o.L/2,o.midR[1]-o.L/2), width=o.L, height=o.L, **rectStyle)
         frame.add_patch(rect)
 
     frame.set_xlabel(r"$x$", fontsize=16)
@@ -101,7 +105,7 @@ def TreePlotter(trees, particles):
 if __name__ == "__main__":
     Nparticles = 1000
 
-    particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(Nparticles)]
+    particles = np.array([20 * np.random.random(size=Nparticles) - 10, 20 * np.random.random(size=Nparticles) - 10]).T
 
     obj = []
     L = 20
@@ -120,5 +124,5 @@ if __name__ == "__main__":
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end-start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
-    print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
-    #TreePlotter(obj, particles)
+    #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
+    TreePlotter(obj, particles)
