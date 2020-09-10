@@ -47,16 +47,16 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
             tmp_r1 , tmp_r2, tmp_r3, tmp_r4 = ([], [], [], [])
 
             #divide the particles over the quadrants
-            for p in tmp_r:
-                Q = Quadrant(p-midR)
+            for j in tmp_r:
+                Q = Quadrant(r[j]-midR)
                 if Q == 1:
-                    tmp_r1.append(p)
+                    tmp_r1.append(j)
                 elif Q == 2:
-                    tmp_r2.append(p)
+                    tmp_r2.append(j)
                 elif Q == 3:
-                    tmp_r3.append(p)
+                    tmp_r3.append(j)
                 elif Q == 4:
-                    tmp_r4.append(p)
+                    tmp_r4.append(j)
 
             #recurse!
             build_tree(r, nodes, leaves, midR + np.array([L/4, L/4]), L/2, parent=nodes[-1], indx=i, tmp_r=tmp_r1)
@@ -69,7 +69,7 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
         if i != len(r):
             if inCell(r[i], ival):
                 N += 1
-                tmp_r.append(r[i])
+                tmp_r.append(i)
     
     #if we exited the for loop and N is still 1 we have found a leaf else if N = 0 no particles are in this cell so we delete it.
     if N == 1:
@@ -78,7 +78,7 @@ def build_tree(r, nodes, leaves, midR, L, parent=None, indx=0, tmp_r=[]):
         del nodes[-1] #no particles in this cell wherefore it is removed
 
 if __name__ == "__main__":
-    r = np.array([20*np.random.random(size=100000)-10, 20*np.random.random(size=100000)-10]).T
+    r = np.array([20*np.random.random(size=10000)-10, 20*np.random.random(size=10000)-10]).T
     
     nodes = []
     leaves = []
