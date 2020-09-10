@@ -19,8 +19,8 @@ class Cell:
         self.L = L #length of the cell's sides
 
 # Create a Tree = 1/4
-def Tree(root, particles):
-    obj.append(root) # append the created node
+def Tree(node, particles):
+    obj.append(node) # append the created node
 
     # Hard copy
     particles1 = particles.copy()
@@ -28,7 +28,7 @@ def Tree(root, particles):
     particles3 = particles.copy()
     particles4 = particles.copy()
 
-    # Redundant particles for each quadrant
+    # Redundant particles for each quadrant (the number in the variable name refers to the ith quadrant)
     rdd1 = []
     rdd2 = []
     rdd3 = []
@@ -39,22 +39,22 @@ def Tree(root, particles):
 
     # Check if more than 1 particles inside square
     for indx, p in enumerate(particles):
-        if (root.midR - root.L/2)[0] < p[0] < root.midR[0] and (root.midR + root.L/2)[1] > p[1] > root.midR[1]:
+        if (node.midR + node.L/2)[0] > p[0] > node.midR[0] and (node.midR + node.L/2)[1] > p[1] > node.midR[1]:
             pcount += 1
             rdd2.append(indx)
             rdd3.append(indx)
             rdd4.append(indx)
-        elif root.midR[0] < p[0] < (root.midR + root.L/2)[0] and (root.midR + root.L/2)[1] > p[1] > root.midR[1]:
+        elif (node.midR - node.L/2)[0] < p[0] < node.midR[0] and (node.midR + node.L/2)[1] > p[1] > node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd3.append(indx)
             rdd4.append(indx)
-        elif root.midR[0] < p[0] < (root.midR + root.L/2)[0] and (root.midR - root.L/2)[1] < p[1] < root.midR[1]:
+        elif (node.midR - node.L/2)[0] < p[0] < node.midR[0] and (node.midR - node.L/2)[1] < p[1] < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
             rdd4.append(indx)
-        elif (root.midR - root.L/2)[0] < p[0] < root.midR[0] and (root.midR - root.L/2)[1] < p[1] < root.midR[1]:
+        elif (node.midR + node.L/2)[0] > p[0] > node.midR[0] and (node.midR - node.L/2)[1] < p[1] < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
@@ -64,26 +64,26 @@ def Tree(root, particles):
     if pcount > 1:
         # np.delete() does not work with empty lists
         if len(rdd1) != 0:
-            particles1 = np.delete(particles1, rdd1,axis=0)
+            particles1 = np.delete(particles1, rdd1, axis=0)
 
         if len(rdd2) != 0:
-            particles2 = np.delete(particles2, rdd2,axis=0)
+            particles2 = np.delete(particles2, rdd2, axis=0)
 
         if len(rdd3) != 0:
-            particles3 = np.delete(particles3, rdd3,axis=0)
+            particles3 = np.delete(particles3, rdd3, axis=0)
 
         if len(rdd4) != 0:
-            particles4 = np.delete(particles4, rdd4,axis=0)
+            particles4 = np.delete(particles4, rdd4, axis=0)
 
         # CREATE THE NODES! and assign the correct particles to the nodes
-        Tree(Cell(root.midR + np.array([-root.L / 4,root.L / 4]),root.L / 2,parent=root),particles1)
-        Tree(Cell(root.midR + np.array([root.L / 4,root.L / 4]),root.L / 2,parent=root),particles2)
-        Tree(Cell(root.midR + np.array([root.L / 4,-root.L / 4]),root.L / 2,parent=root),particles3)
-        Tree(Cell(root.midR + np.array([-root.L / 4,-root.L / 4]),root.L / 2,parent=root),particles4)
+        Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node), particles1)
+        Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node), particles2)
+        Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node), particles3)
+        Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node), particles4)
 
 
 
-def TreePlotter(cells, particles):
+def CellPlotter(cells, particles):
     rectStyle = dict(fill=False, ec='k', lw=2)
     scatterStyle = dict(color='k', s=2)
 
@@ -103,7 +103,7 @@ def TreePlotter(cells, particles):
 
 
 if __name__ == "__main__":
-    Nparticles = 1000
+    Nparticles = 10000
 
     particles = np.array([20 * np.random.random(size=Nparticles) - 10, 20 * np.random.random(size=Nparticles) - 10]).T
 
@@ -115,9 +115,9 @@ if __name__ == "__main__":
     Tree(ROOT, particles)
     end = time.time()
 
-    print("\nTOTAL AMOUNT OF NODES: ",len(obj))
+    print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
     
-    # Sort the obj array for leaves upto root
+    # Sort the obj array for nodes up to root
     obj.sort(key=lambda o: o.L)
     lengths = [o.L for o in obj]
     print("MINIMUM LENGTH IS: ",np.min(lengths))
@@ -125,4 +125,4 @@ if __name__ == "__main__":
 
     # TURN OFF IF SPAMMY
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
-    TreePlotter(obj, particles)
+    CellPlotter(obj, particles)
