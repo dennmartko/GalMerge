@@ -18,6 +18,20 @@ class Cell:
         self.midR = midR #coordinate location of the cell's center
         self.L = L #length of the cell's sides
 
+
+class Particle:
+    def __init__(self,x,y,vx,vy):
+        # Position and velocity
+        self.x = x
+        self.y = y
+
+        self.vx = vx
+        self.vy = vy
+
+        # Physical constants
+        self.m = 1.9891*10**(30)
+        self.G = 6.67408*10**(-11) # m3 kg-1 s-2
+
 # Create a Tree = 1/4
 def Tree(node, particles):
     obj.append(node) # append the created node
@@ -39,22 +53,24 @@ def Tree(node, particles):
 
     # Check if more than 1 particles inside square
     for indx, p in enumerate(particles):
-        if (node.midR + node.L/2)[0] > p[0] > node.midR[0] and (node.midR + node.L/2)[1] > p[1] > node.midR[1]:
+        x = p.x
+        y = p.y
+        if (node.midR + node.L/2)[0] > x > node.midR[0] and (node.midR + node.L/2)[1] > y > node.midR[1]:
             pcount += 1
             rdd2.append(indx)
             rdd3.append(indx)
             rdd4.append(indx)
-        elif (node.midR - node.L/2)[0] < p[0] < node.midR[0] and (node.midR + node.L/2)[1] > p[1] > node.midR[1]:
+        elif (node.midR - node.L/2)[0] < x < node.midR[0] and (node.midR + node.L/2)[1] > y > node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd3.append(indx)
             rdd4.append(indx)
-        elif (node.midR - node.L/2)[0] < p[0] < node.midR[0] and (node.midR - node.L/2)[1] < p[1] < node.midR[1]:
+        elif (node.midR - node.L/2)[0] < x < node.midR[0] and (node.midR - node.L/2)[1] < y < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
             rdd4.append(indx)
-        elif (node.midR + node.L/2)[0] > p[0] > node.midR[0] and (node.midR - node.L/2)[1] < p[1] < node.midR[1]:
+        elif (node.midR + node.L/2)[0] > x > node.midR[0] and (node.midR - node.L/2)[1] < y < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
@@ -91,7 +107,7 @@ def CellPlotter(cells, particles):
     frame = fig.add_subplot(111)
     frame.set_xlim(-10, 10)
     frame.set_ylim(-10, 10)
-    frame.scatter(particles[:,0], particles[:,1], **scatterStyle)
+    frame.scatter([p.x for p in particles], [p.y for p in particles], **scatterStyle)
 
     for o in cells:
         rect = matplotlib.patches.Rectangle((o.midR[0]-o.L/2,o.midR[1]-o.L/2), width=o.L, height=o.L, **rectStyle)
@@ -103,9 +119,13 @@ def CellPlotter(cells, particles):
 
 
 if __name__ == "__main__":
-    Nparticles = 10000
+    Nparticles = 100
+    x = 20*np.random.random(size=Nparticles) - 10
+    y = 20*np.random.random(size=Nparticles)- 10
+    vx = 200*np.random.random(size=Nparticles)
+    vy = 200*np.random.random(size=Nparticles)
 
-    particles = np.array([20 * np.random.random(size=Nparticles) - 10, 20 * np.random.random(size=Nparticles) - 10]).T
+    particles = [Particle(x[i],y[i],vx[i],vy[i]) for i in range(0,Nparticles)]
 
     obj = []
     L = 20
@@ -124,5 +144,6 @@ if __name__ == "__main__":
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end-start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
+    #
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     CellPlotter(obj, particles)
