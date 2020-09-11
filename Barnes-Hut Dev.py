@@ -20,7 +20,8 @@ class Cell:
 
 # Create a Tree = 1/4
 def Tree(root, particles):
-    obj.append(root) # append the created node
+    if len(particles) != 0:
+        obj.append(root) # append the created node
 
     # Hard copy
     particles1 = particles.copy()
@@ -99,7 +100,7 @@ def TreePlotter(trees, particles):
 
 
 if __name__ == "__main__":
-    Nparticles = 1000
+    Nparticles = 100000
 
     particles = [(20 * np.random.random() - 10, 20 * np.random.random() - 10) for i in range(Nparticles)]
 
@@ -120,5 +121,5 @@ if __name__ == "__main__":
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end-start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
-    print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
+    #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     #TreePlotter(obj, particles)
