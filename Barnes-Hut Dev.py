@@ -30,6 +30,9 @@ class Particle:
         self.m = 1.9891 * 10 ** (30)
         self.G = 6.67408 * 10 ** (-11) # m3 kg-1 s-2
 
+        # Gravitational force due to interaction with other CM's
+        self.Fg = 0
+
 # Create a Tree = 1/4
 def Tree(node, particles):
     obj.append(node) # append the created node
@@ -144,6 +147,18 @@ def CellPlotter(cells, particles):
     frame.set_ylabel(r"$y$", fontsize=16)
     show() 
 
+def forca(Tree, particles,θ):
+    for p in particles:
+        for cell in Tree:
+            d = (abs(np.sum(cell.R_CM**2)**0.5 - (p.x**2 + p.y**2)**0.5))
+            if cell.L/d > θ:
+                p.Fg += p.G * cell.M/d**2
+            else:
+                break
+
+
+
+
 
 if __name__ == "__main__":
     Nparticles = 100000
@@ -168,14 +183,15 @@ if __name__ == "__main__":
 
     start = time.time()
     Tree(ROOT, particles)
-    end = time.time()
 
     print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
     
-    # Sort the obj array for nodes up to root
-    obj.sort(key=lambda o: o.L)
-    lengths = [o.L for o in obj]
-    print("MINIMUM LENGTH IS: ",np.min(lengths))
+    # Compute the forces on each particle depending on theta
+        # Sort the obj array for root until leaves
+    obj.sort(key=lambda o: o.L, reverse=True)
+    forca(obj, particles, 0.5)
+    end = time.time()
+
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
