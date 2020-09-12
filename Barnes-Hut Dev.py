@@ -17,7 +17,6 @@ class Cell:
         #Geometrical quantities
         self.midR = midR #coordinate location of the cell's center
         self.L = L #length of the cell's sides
-
 class Particle:
     def __init__(self,x,y,vx,vy):
         # Position and velocity
@@ -60,7 +59,6 @@ def Tree(node, particles):
 
     # Init
     pcount = 0
-
     # Check if more than 1 particles inside square
     for indx, p in enumerate(particles):
         x = p.x
@@ -119,22 +117,13 @@ def Tree(node, particles):
             particles4 = np.delete(particles4, rdd4, axis=0)
 
         if M1 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = nom1/M1), particles1)
+            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = nom1 / M1), particles1)
         if M2 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = nom2/M2), particles2)
+            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = nom2 / M2), particles2)
         if M3 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = nom3/M3), particles3)
+            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = nom3 / M3), particles3)
         if M4 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = nom4/M4), particles4)
-
-
-        '''
-        # CREATE THE NODES!  and assign the correct particles to the nodes
-        Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = nom1/M1), particles1)
-        Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = nom2/M2), particles2)
-        Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = nom3/M3), particles3)
-        Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = nom4/M4), particles4)
-        '''
+            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = nom4 / M4), particles4)
 
 
 def CellPlotter(cells, particles):
@@ -168,7 +157,15 @@ if __name__ == "__main__":
     obj = []
     L = 20
 
+    # initialise ROOT
     ROOT = Cell(np.array([0,0]),L,parent=None)
+    # compute COM for ROOT
+    Rgal_CM = np.array([np.sum([p.m * p.x for p in particles]) / np.sum([p.m for p in particles]), np.sum([p.m * p.y for p in particles]) / np.sum([p.m for p in particles])])
+    Mgal = np.sum([p.m for p in particles])
+
+    ROOT.M = Mgal
+    ROOT.R_CM = Rgal_CM
+
     start = time.time()
     Tree(ROOT, particles)
     end = time.time()
@@ -182,6 +179,6 @@ if __name__ == "__main__":
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
-    #
+
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     #CellPlotter(obj, particles)
