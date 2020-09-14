@@ -5,9 +5,12 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
 
+#imports from own modules
+import constants as const
+
 #Prototype of a cell object
 class Cell:
-    def __init__(self,midR,L,parent=None, M=None, R_CM=None):
+    def __init__(self, midR, L, parent=None, M=None, R_CM=None):
         self.parent = parent #parent of the current cell
         
         #Physical quantities
@@ -17,24 +20,24 @@ class Cell:
         #Geometrical quantities
         self.midR = midR #coordinate location of the cell's center
         self.L = L #length of the cell's sides
+
+#Prototype of a particle object
 class Particle:
-    def __init__(self,x,y,vx,vy):
-        # Position and velocity
-        self.x = x
-        self.y = y
+    def __init__(self, r, v, m=None):
+        # Position, velocity and mass
+        self.r = r
+        self.v = v
 
-        self.vx = vx
-        self.vy = vy
-
-        # Physical constants
-        self.m = 1.9891 * 10 ** (30)
-        self.G = 6.67408 * 10 ** (-11) # m3 kg-1 s-2
+        if m is None:
+            self.m = const.Msol #give the particle the mass of the Sun if m is not provided
+        else:
+            self.m = m
 
 # Create a Tree = 1/4
 def Tree(node, particles):
     obj.append(node) # append the created node
 
-    # Hard copy
+    # Hard copy the particle array
     particles1 = particles.copy()
     particles2 = particles.copy()
     particles3 = particles.copy()
@@ -47,11 +50,11 @@ def Tree(node, particles):
     rdd3 = []
     rdd4 = []
 
-    # Temporary memory where we store nominator of R_CM calculation
-    nom1 = np.array([0,0], dtype=np.float64)
-    nom2 = np.array([0,0], dtype=np.float64)
-    nom3 = np.array([0,0], dtype=np.float64)
-    nom4 = np.array([0,0], dtype=np.float64)
+    # Temporary memory where we store numerator of R_CM
+    num1 = np.array([0,0], dtype=np.float64)
+    num2 = np.array([0,0], dtype=np.float64)
+    num3 = np.array([0,0], dtype=np.float64)
+    num4 = np.array([0,0], dtype=np.float64)
 
     # Total mass of each cell
     M1 = M2 = M3 = M4 = 0
@@ -61,8 +64,7 @@ def Tree(node, particles):
     pcount = 0
     # Check if more than 1 particles inside square
     for indx, p in enumerate(particles):
-        x = p.x
-        y = p.y
+        x, y = p.r
         m = p.m
         if (node.midR + node.L / 2)[0] > x > node.midR[0] and (node.midR + node.L / 2)[1] > y > node.midR[1]:
             pcount += 1
@@ -70,36 +72,32 @@ def Tree(node, particles):
             rdd3.append(indx)
             rdd4.append(indx)
 
-            nom1[0]+=x * m
-            nom1[1]+=y * m
-            M1+=m
+            num1[0] += x * m; num1[1] += y * m
+            M1 += m
         elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR + node.L / 2)[1] > y > node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd3.append(indx)
             rdd4.append(indx)
 
-            nom2[0]+=x * m
-            nom2[1]+=y * m
-            M2+=m
+            num2[0] += x * m; num2[1] += y * m
+            M2 += m
         elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
             rdd4.append(indx)
 
-            nom3[0]+=x * m
-            nom3[1]+=y * m
-            M3+=m
+            num3[0] += x * m; num3[1] += y * m
+            M3 += m
         elif (node.midR + node.L / 2)[0] > x > node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
             pcount += 1
             rdd1.append(indx)
             rdd2.append(indx)
             rdd3.append(indx)
 
-            nom4[0]+=x * m
-            nom4[1]+=y * m
-            M4+=m
+            num4[0] += x * m; num4[1] += y * m
+            M4 += m
 
     # If theres more than one particle in a node, we can create new nodes!
     if pcount > 1:
@@ -116,14 +114,15 @@ def Tree(node, particles):
         if len(rdd4) != 0:
             particles4 = np.delete(particles4, rdd4, axis=0)
 
+        # if a potential cell's mass is nonzero create it!
         if M1 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = nom1 / M1), particles1)
+            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1), particles1)
         if M2 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = nom2 / M2), particles2)
+            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2), particles2)
         if M3 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = nom3 / M3), particles3)
+            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3), particles3)
         if M4 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = nom4 / M4), particles4)
+            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4), particles4)
 
 
 def CellPlotter(cells, particles):
@@ -134,7 +133,7 @@ def CellPlotter(cells, particles):
     frame = fig.add_subplot(111)
     frame.set_xlim(-10, 10)
     frame.set_ylim(-10, 10)
-    frame.scatter([p.x for p in particles], [p.y for p in particles], **scatterStyle)
+    frame.scatter([p.r[0] for p in particles], [p.r[1] for p in particles], **scatterStyle)
 
     for o in cells:
         rect = matplotlib.patches.Rectangle((o.midR[0] - o.L / 2,o.midR[1] - o.L / 2), width=o.L, height=o.L, **rectStyle)
@@ -147,24 +146,26 @@ def CellPlotter(cells, particles):
 
 if __name__ == "__main__":
     Nparticles = 100000
+
     x = 20 * np.random.random(size=Nparticles) - 10
     y = 20 * np.random.random(size=Nparticles) - 10
     vx = 200 * np.random.random(size=Nparticles)
     vy = 200 * np.random.random(size=Nparticles)
 
-    particles = [Particle(x[i],y[i],vx[i],vy[i]) for i in range(0,Nparticles)]
+    r = np.array([x, y])
+    v = np.array([vx, vy])
+
+    particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
 
     obj = []
     L = 20
 
-    # initialise ROOT
-    ROOT = Cell(np.array([0,0]),L,parent=None)
-    # compute COM for ROOT
-    Rgal_CM = np.array([np.sum([p.m * p.x for p in particles]) / np.sum([p.m for p in particles]), np.sum([p.m * p.y for p in particles]) / np.sum([p.m for p in particles])])
+    # compute the location of the Center of Mass (COM) and total mass for the ROOT cell
+    Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
     Mgal = np.sum([p.m for p in particles])
 
-    ROOT.M = Mgal
-    ROOT.R_CM = Rgal_CM
+    # initialize ROOT cell
+    ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
     start = time.time()
     Tree(ROOT, particles)
