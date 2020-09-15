@@ -120,17 +120,21 @@ def Tree(node, particles):
 
         # if a potential cell's mass is nonzero create it!
         if M1 != 0:
-            node.daughters.append(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1))
-            Tree(node.daughters[-1], particles1)
+            D1 = Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1)
+            node.daughters.append(D1)
+            Tree(D1, particles1)
         if M2 != 0:
-            node.daughters.append(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2))
-            Tree(node.daughters[-1], particles2)
+            D2 = Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2)
+            node.daughters.append(D2)
+            Tree(D2, particles2)
         if M3 != 0:
-            node.daughters.append(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3))
-            Tree(node.daughters[-1], particles3)
+            D3 = Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3)
+            node.daughters.append(D3)
+            Tree(D3, particles3)
         if M4 != 0:
-            node.daughters.append(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4))
-            Tree(node.daughters[-1], particles4)
+            D4 = Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4)
+            node.daughters.append(D4)
+            Tree(D4, particles4)
 
 
 # Functions for computing the force on a single particle
@@ -206,7 +210,7 @@ if __name__ == "__main__":
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
 
     #DEBUG
-    #print(obj[-1].daughters)
+    print(obj[-1].daughters)
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
 
     #PLOT CELLS
