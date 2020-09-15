@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     # TURN OFF IF SPAMMY
     for o in obj:
-        time.sleep(1)
+        time.sleep(.4)
         print(o.daughter)
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     #CellPlotter(obj, particles)
