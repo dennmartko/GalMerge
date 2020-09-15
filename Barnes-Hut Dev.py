@@ -62,6 +62,9 @@ def Tree(node, particles):
     # Total mass of each cell
     M1 = M2 = M3 = M4 = 0
 
+    # Track daughter cells
+    node.daughter = []
+
 
     # Init
     pcount = 0
@@ -75,7 +78,8 @@ def Tree(node, particles):
             rdd3.append(indx)
             rdd4.append(indx)
 
-            num1[0] += x * m; num1[1] += y * m
+            num1[0] += x * m
+            num1[1] += y * m
             M1 += m
         elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR + node.L / 2)[1] > y > node.midR[1]:
             pcount += 1
@@ -83,7 +87,8 @@ def Tree(node, particles):
             rdd3.append(indx)
             rdd4.append(indx)
 
-            num2[0] += x * m; num2[1] += y * m
+            num2[0] += x * m
+            num2[1] += y * m
             M2 += m
         elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
             pcount += 1
@@ -91,7 +96,8 @@ def Tree(node, particles):
             rdd2.append(indx)
             rdd4.append(indx)
 
-            num3[0] += x * m; num3[1] += y * m
+            num3[0] += x * m
+            num3[1] += y * m
             M3 += m
         elif (node.midR + node.L / 2)[0] > x > node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
             pcount += 1
@@ -99,7 +105,8 @@ def Tree(node, particles):
             rdd2.append(indx)
             rdd3.append(indx)
 
-            num4[0] += x * m; num4[1] += y * m
+            num4[0] += x * m
+            num4[1] += y * m
             M4 += m
 
     # If theres more than one particle in a node, we can create new nodes!
@@ -119,13 +126,21 @@ def Tree(node, particles):
 
         # if a potential cell's mass is nonzero create it!
         if M1 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1), particles1)
+            C1 = Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1)
+            node.daughter.append(C1)
+            Tree(C1, particles1)
         if M2 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2), particles2)
+            C2 = Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2)
+            node.daughter.append(C2)
+            Tree(C2, particles2)
         if M3 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3), particles3)
+            C3 = Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3)
+            node.daughter.append(C3)
+            Tree(C3, particles3)
         if M4 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4), particles4)
+            C4 = Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4)
+            node.daughter.append(C4)
+            Tree(C4, particles4)
 
 
 def CellPlotter(cells, particles):
@@ -149,18 +164,15 @@ def CellPlotter(cells, particles):
 def forca(Tree, particles,θ):
     for p in particles:
         for cell in Tree:
-            d = (abs(np.sum(cell.R_CM**2)**0.5 - (p.x**2 + p.y**2)**0.5))
-            if cell.L/d > θ:
-                p.Fg += p.G * cell.M/d**2
+            d = (abs(np.sum(cell.R_CM ** 2) ** 0.5 - (p.x ** 2 + p.y ** 2) ** 0.5))
+            if cell.L / d > θ:
+                p.Fg += p.G * cell.M / d ** 2
             else:
                 break
 
 
-
-
-
 if __name__ == "__main__":
-    Nparticles = 100000
+    Nparticles = 10000
 
     x = 20 * np.random.random(size=Nparticles) - 10
     y = 20 * np.random.random(size=Nparticles) - 10
@@ -175,7 +187,8 @@ if __name__ == "__main__":
     obj = []
     L = 20
 
-    # compute the location of the Center of Mass (COM) and total mass for the ROOT cell
+    # compute the location of the Center of Mass (COM) and total mass for the
+    # ROOT cell
     Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
     Mgal = np.sum([p.m for p in particles])
 
@@ -190,12 +203,14 @@ if __name__ == "__main__":
     # Compute the forces on each particle depending on theta
         # Sort the obj array for root until leaves
     obj.sort(key=lambda o: o.L, reverse=True)
-    forca(obj, particles, 0.5)
+    #forca(obj, particles, 0.5)
     end = time.time()
 
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
 
     # TURN OFF IF SPAMMY
-
+    for o in obj:
+        time.sleep(1)
+        print(o.daughter)
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
     #CellPlotter(obj, particles)
