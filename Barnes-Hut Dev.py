@@ -8,10 +8,12 @@ from matplotlib.pyplot import figure, show
 #imports from own modules
 import constants as const
 
+
 #Prototype of a cell object
 class Cell:
-    def __init__(self, midR, L, parent=None, M=None, R_CM=None):
+    def __init__(self, midR, L, parent=None, M=None, R_CM=None, daughters=[]):
         self.parent = parent #parent of the current cell
+        self.daughters = daughters #daughters of the current cell
         
         #Physical quantities
         self.M = M #total mass contained within the cell
@@ -20,6 +22,7 @@ class Cell:
         #Geometrical quantities
         self.midR = midR #coordinate location of the cell's center
         self.L = L #length of the cell's sides
+
 
 #Prototype of a particle object
 class Particle:
@@ -32,6 +35,7 @@ class Particle:
             self.m = const.Msol #give the particle the mass of the Sun if m is not provided
         else:
             self.m = m
+
 
 # Create a Tree = 1/4
 def Tree(node, particles):
@@ -116,18 +120,40 @@ def Tree(node, particles):
 
         # if a potential cell's mass is nonzero create it!
         if M1 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1), particles1)
+            node.daughters.append(Cell(node.midR + np.array([node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M1, R_CM = num1 / M1))
+            Tree(node.daughters[-1], particles1)
         if M2 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2), particles2)
+            node.daughters.append(Cell(node.midR + np.array([-node.L / 4, node.L / 4]), node.L / 2, parent=node, M = M2, R_CM = num2 / M2))
+            Tree(node.daughters[-1], particles2)
         if M3 != 0:
-            Tree(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3), particles3)
+            node.daughters.append(Cell(node.midR + np.array([-node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M3, R_CM = num3 / M3))
+            Tree(node.daughters[-1], particles3)
         if M4 != 0:
-            Tree(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4), particles4)
+            node.daughters.append(Cell(node.midR + np.array([node.L / 4, -node.L / 4]), node.L / 2, parent=node, M = M4, R_CM = num4 / M4))
+            Tree(node.daughters[-1], particles4)
+
+
+# Functions for computing the force on a single particle
+def compute_theta(r_p, R_CM, L):
+    Delta_r = r_p - R_CM
+    D = norm(Delta_r)
+    return L/D, Delta_r
+
+def Force(M, m, Delta_r):
+    return (const.G*M1*M2)/np.dot(Delta_r, Delta_r)**(3/2)*Delta_r
+
+def Force_handler(node, particle, theta=1, totalF=np.zeros(2)):
+   th, Delta_r = compute_theta(particle.r, node.R_CM, node.L)
+   if th < theta:
+       totalF += Force(node.M, particle.m, Delta_r)
+   else:
+       for d in node.daughters:
+           Force_handler(d, particle, theta=theta, totalF=totalF)
 
 
 def CellPlotter(cells, particles):
-    rectStyle = dict(fill=False, ec='k', lw=2)
-    scatterStyle = dict(color='k', s=2)
+    rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
+    scatterStyle = dict(color='k', s=2, zorder=2)
 
     fig = figure(figsize=(10, 10))
     frame = fig.add_subplot(111)
@@ -141,11 +167,11 @@ def CellPlotter(cells, particles):
 
     frame.set_xlabel(r"$x$", fontsize=16)
     frame.set_ylabel(r"$y$", fontsize=16)
-    show() 
+    show()
 
 
 if __name__ == "__main__":
-    Nparticles = 100000
+    Nparticles = 100
 
     x = 20 * np.random.random(size=Nparticles) - 10
     y = 20 * np.random.random(size=Nparticles) - 10
@@ -179,7 +205,9 @@ if __name__ == "__main__":
     print("MINIMUM LENGTH IS: ",np.min(lengths))
     print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
 
-    # TURN OFF IF SPAMMY
-
+    #DEBUG
+    #print(obj[-1].daughters)
     #print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
+
+    #PLOT CELLS
     #CellPlotter(obj, particles)
