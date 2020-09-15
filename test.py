@@ -1,10 +1,11 @@
 class Node:
-    def __init__(self, parent=None, daughters=[]):
+    def __init__(self, parent=None):
         self.parent = parent
-        self.daughters = daughters
+        self.daughters = None
 
 def recurse(node, val, goal):
     obj.append(node)
+    node.daughters = []
     val += 1
     if val < goal:
         #D1
@@ -31,4 +32,4 @@ if __name__ == "__main__":
     goal = 10
     recurse(ROOT, val, goal)
 
-    print(obj[-1].daughters)
+    print(obj[0].daughters)

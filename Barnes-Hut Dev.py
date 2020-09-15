@@ -11,9 +11,9 @@ import constants as const
 
 #Prototype of a cell object
 class Cell:
-    def __init__(self, midR, L, parent=None, M=None, R_CM=None, daughters=[]):
+    def __init__(self, midR, L, parent=None, M=None, R_CM=None):
         self.parent = parent #parent of the current cell
-        self.daughters = daughters #daughters of the current cell
+        self.daughters = None #daughters of the current cell
         
         #Physical quantities
         self.M = M #total mass contained within the cell
@@ -63,6 +63,7 @@ def Tree(node, particles):
     # Total mass of each cell
     M1 = M2 = M3 = M4 = 0
 
+    node.daughters = []
 
     # Init
     pcount = 0
@@ -144,7 +145,7 @@ def compute_theta(r_p, R_CM, L):
     return L/D, Delta_r
 
 def Force(M, m, Delta_r):
-    return (const.G*M1*M2)/np.dot(Delta_r, Delta_r)**(3/2)*Delta_r
+    return (const.G*M*m)/np.dot(Delta_r, Delta_r)**(3/2)*Delta_r
 
 def Force_handler(node, particle, theta=1, totalF=np.zeros(2)):
    th, Delta_r = compute_theta(particle.r, node.R_CM, node.L)
