@@ -1,9 +1,9 @@
 import numpy as np
 import time
-import matplotlib
 
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
+from numba import jit,njit
 
 #imports from own modules
 import constants as const
@@ -138,25 +138,6 @@ def Tree(node, particles):
 			Tree(D4, particles4)
 
 
-# Functions for computing the gravitational force on a single particle
-def compute_θ(r_p, R_CM, L):
-	Δr = r_p - R_CM
-	D = np.linalg.norm(Δr)
-	return L/D, Δr
-
-def GForce(M, m, Δr):
-	return (const.G*M*m)/np.dot(Δr, Δr)**(3/2)*Δr
-
-def GForce_handler(node, particle, θ=0.5, totalF=np.zeros(2)):
-	LdivD, Δr = compute_θ(particle.r, node.R_CM, node.L)
-	if LdivD < θ:
-		totalF += GForce(node.M, particle.m, Δr)
-	else:
-		for d in node.daughters:
-			GForce_handler(d, particle, θ=θ, totalF=totalF)
-	return totalF
-
-
 def CellPlotter(cells, particles):
 	rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
 	scatterStyle = dict(color='k', s=2, zorder=2)
@@ -177,7 +158,7 @@ def CellPlotter(cells, particles):
 
 
 if __name__ == "__main__":
-	Nparticles = 10000
+	Nparticles = 100000
 	
 	x = 20 * np.random.random(size=Nparticles) - 10
 	y = 20 * np.random.random(size=Nparticles) - 10
@@ -207,17 +188,4 @@ if __name__ == "__main__":
 	
 	# Sort the obj array for nodes up to root
 	obj.sort(key=lambda o: o.L)
-	lengths = [o.L for o in obj]
-	print("MINIMUM LENGTH IS: ",np.min(lengths))
 	print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",end - start, "SECONDS!")
-
-	#DEBUG
-	s2 = time.time()
-	for p in particles:
-		GForce_handler(ROOT, p)
-	print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {time.time()-s2} s.")
-	#print(obj[-1].daughters)
-	#print("\nPROOF THAT THE TREE IS SORTED: ",lengths)
-
-	#PLOT CELLS
-	#CellPlotter(obj, particles)
