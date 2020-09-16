@@ -36,11 +36,7 @@ class Particle:
 		else:
 			self.m = m
 
-@jit(nopython=True)
-def Optimizer1(num,x,y,m,M):
-	return (num + np.array([x * m,y * m]),M + m)
-
-def Optimizer2(rdd1,rdd2,rdd3,rdd4,particles1,particles2,particles3,particles4):
+def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, particles4):
 	# np.delete() does not work with empty lists
 	if len(rdd1) != 0:
 		particles1 = np.delete(particles1, rdd1, axis=0)
@@ -54,10 +50,24 @@ def Optimizer2(rdd1,rdd2,rdd3,rdd4,particles1,particles2,particles3,particles4):
 	if len(rdd4) != 0:
 		particles4 = np.delete(particles4, rdd4, axis=0)
 
-	return particles1,particles2,particles3,particles4 
+	return particles1, particles2, particles3, particles4 
 
-@jit(nopython=True, cache=True)
-def Optimizer3(midR,L,order):
+@jit(nopython=True)
+def CM_components():
+	# Temporary memory where we store numerator of R_CM
+	num1, num2, num3, num4 = np.zeros((4,2), dtype=np.float64)
+
+	# Total mass of each cell
+	M1 = M2 = M3 = M4 = 0
+
+	return num1, num2, num3, num4, M1, M2, M3, M4
+
+@jit(nopython=True)
+def alterCM_components(num,r,m,M):
+	return (num + m*r, M + m)
+
+@jit(nopython=True)
+def NewCellGeom(midR,L,order):
 	if order == 1:
 		newmidR = midR + np.array([L / 4, L / 4])
 	if order == 2:
@@ -70,18 +80,9 @@ def Optimizer3(midR,L,order):
 	newL = L / 2
 	return newmidR, newL
 
-jit(nopython=True)
-def Optimizer4():
-	# Temporary memory where we store numerator of R_CM
-	num1 = np.array([0,0], dtype=np.float64)
-	num2 = np.array([0,0], dtype=np.float64)
-	num3 = np.array([0,0], dtype=np.float64)
-	num4 = np.array([0,0], dtype=np.float64)
-
-	# Total mass of each cell
-	M1 = M2 = M3 = M4 = 0
-
-	return num1,num2,num3,num4,M1,M2,M3,M4
+@jit(nopython=True)
+def get_condr(r, L, midR):
+	return 2*(r-midR)/L
 
 # Create a Tree = 1/4
 def Tree(node, particles):
@@ -100,7 +101,7 @@ def Tree(node, particles):
 	rdd3 = []; rdd3app = rdd3.append;
 	rdd4 = []; rdd4app = rdd4.append;
 
-	num1,num2,num3,num4,M1,M2,M3,M4 = Optimizer4()
+	num1, num2, num3, num4, M1, M2, M3, M4 = CM_components()
 
 	node.daughters = []
 
@@ -108,60 +109,61 @@ def Tree(node, particles):
 	pcount = 0
 	# Check if more than 1 particles inside square
 	for indx, p in enumerate(particles):
-		x, y = p.r
+		r = p.r
 		m = p.m
-		if (node.midR + node.L / 2)[0] > x > node.midR[0] and (node.midR + node.L / 2)[1] > y > node.midR[1]:
+		condr = get_condr(r, L, node.midR) #condition r
+		if 1 > condr[0] > 0 and 1 > condr[1] > 0:
 			pcount += 1
 			rdd2app(indx)
 			rdd3app(indx)
 			rdd4app(indx)
 
-			num1, M1 = Optimizer1(num1,x,y,m,M1)
-		elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR + node.L / 2)[1] > y > node.midR[1]:
+			num1, M1 = alterCM_components(num1,r,m,M1)
+		elif -1 < condr[0] < 0 and 1 > condr[1] > 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd3app(indx)
 			rdd4app(indx)
 
-			num2, M2 = Optimizer1(num2,x,y,m,M2)
-		elif (node.midR - node.L / 2)[0] < x < node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
+			num2, M2 = alterCM_components(num2,r,m,M2)
+		elif -1 < condr[0] < 0 and -1 < condr[1] < 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd4app(indx)
 
-			num3, M3 = Optimizer1(num3,x,y,m,M3)
-		elif (node.midR + node.L / 2)[0] > x > node.midR[0] and (node.midR - node.L / 2)[1] < y < node.midR[1]:
+			num3, M3 = alterCM_components(num3,r,m,M3)
+		elif 1 > condr[0] > 0 and -1 < condr[1] < 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd3app(indx)
 
-			num4, M4 = Optimizer1(num4,x,y,m,M4)
+			num4, M4 = alterCM_components(num4,r,m,M4)
 
 	# If theres more than one particle in a node, we can create new nodes!
 	if pcount > 1:
-		# np.delete() does not work with empty lists
-		particles1,particles2,particles3,particles4 = Optimizer2(np.array(rdd1),np.array(rdd2),np.array(rdd3),np.array(rdd4),particles1,particles2,particles3,particles4)
+		#remove redundant particles from particles arrays
+		particles1, particles2, particles3, particles4 = rmParticles(np.array(rdd1), np.array(rdd2), np.array(rdd3), np.array(rdd4), particles1, particles2, particles3, particles4)
 
 		# if a potential cell's mass is nonzero create it!
 		if M1 != 0:
-			newmidR, newL = Optimizer3(node.midR,node.L,1)
+			newmidR, newL = NewCellGeom(node.midR, node.L, 1)
 			D1 = Cell(newmidR, node.L / 2, parent=node, M = M1, R_CM = num1 / M1)
 			node.daughters.append(D1)
 			Tree(D1, particles1)
 		if M2 != 0:
-			newmidR, newL = Optimizer3(node.midR,node.L,2)
+			newmidR, newL = NewCellGeom(node.midR, node.L, 2)
 			D2 = Cell(newmidR, newL, parent=node, M = M2, R_CM = num2 / M2)
 			node.daughters.append(D2)
 			Tree(D2, particles2)
 		if M3 != 0:
-			newmidR, newL = Optimizer3(node.midR,node.L,3)
+			newmidR, newL = NewCellGeom(node.midR, node.L, 3)
 			D3 = Cell(newmidR, newL, parent=node, M = M3, R_CM = num3 / M3)
 			node.daughters.append(D3)
 			Tree(D3, particles3)
 		if M4 != 0:
-			newmidR, newL = Optimizer3(node.midR,node.L,4)
+			newmidR, newL = NewCellGeom(node.midR, node.L, 4)
 			D4 = Cell(newmidR, newL, parent=node, M = M4, R_CM = num4 / M4)
 			node.daughters.append(D4)
 			Tree(D4, particles4)
@@ -189,7 +191,7 @@ def CellPlotter(cells, particles):
 if __name__ == "__main__":
 	time_arr = []
 
-	for i in range(5):
+	for i in range(20):
 		Nparticles = 100000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
