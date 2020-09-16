@@ -56,7 +56,7 @@ def Optimizer2(rdd1,rdd2,rdd3,rdd4,particles1,particles2,particles3,particles4):
 
 	return particles1,particles2,particles3,particles4 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True)
 def Optimizer3(midR,L,order):
 	if order == 1:
 		newmidR = midR + np.array([L / 4, L / 4])
