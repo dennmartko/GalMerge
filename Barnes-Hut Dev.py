@@ -1,3 +1,4 @@
+from numba import jit
 import numpy as np
 import time
 import matplotlib
@@ -7,7 +8,6 @@ from matplotlib.pyplot import figure, show
 
 #imports from own modules
 import constants as const
-
 
 #Prototype of a cell object
 class Cell:
@@ -38,6 +38,7 @@ class Particle:
 
 
 # Create a Tree = 1/4
+#@jit(nopython=False, parallel=True)
 def Tree(node, particles):
 	obj.append(node) # append the created node
 
@@ -139,11 +140,15 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
+#@jit(nopython=True, parallel=True)
 def compute_θ(r_p, R_CM, L):
 	Δr = r_p - R_CM
 	D = np.linalg.norm(Δr)
+	if D == 0:
+		return np.inf, Δr
 	return L/D, Δr
 
+#@jit(nopython=True, parallel=True)
 def GForce(M, m, Δr):
 	return (const.G*M*m)/np.dot(Δr, Δr)**(3/2)*Δr
 
