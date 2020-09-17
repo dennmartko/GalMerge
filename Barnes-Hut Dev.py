@@ -4,10 +4,10 @@ import time
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
 from numba import jit,njit
-from multiprocessing import Process
 
 #imports from own modules
 import constants as const
+from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr
 
 
 #Prototype of a cell object
@@ -37,6 +37,7 @@ class Particle:
 		else:
 			self.m = m
 
+
 def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, particles4):
 	# np.delete() does not work with empty lists
 	if len(rdd1) != 0:
@@ -52,38 +53,6 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 		particles4 = np.delete(particles4, rdd4, axis=0)
 
 	return particles1, particles2, particles3, particles4 
-
-@jit(nopython=True)
-def CM_components():
-	# Temporary memory where we store numerator of R_CM
-	num1, num2, num3, num4 = np.zeros((4,2), dtype=np.float64)
-
-	# Total mass of each cell
-	M1 = M2 = M3 = M4 = 0
-
-	return num1, num2, num3, num4, M1, M2, M3, M4
-
-@jit(nopython=True)
-def alterCM_components(num,r,m,M):
-	return (num + m*r, M + m)
-
-@jit(nopython=True)
-def NewCellGeom(midR,L,order):
-	if order == 1:
-		newmidR = midR + np.array([L / 4, L / 4])
-	if order == 2:
-		newmidR = midR + np.array([-L / 4, L / 4])
-	if order == 3:
-		newmidR = midR + np.array([-L / 4, -L / 4])
-	if order == 4:
-		newmidR = midR + np.array([L / 4, -L / 4])
-	
-	newL = L / 2
-	return newmidR, newL
-
-@jit(nopython=True)
-def get_condr(r, L, midR):
-	return 2*(r-midR)/L
 
 # Create a Tree = 1/4
 def Tree(node, particles):
@@ -102,7 +71,7 @@ def Tree(node, particles):
 	rdd3 = []; rdd3app = rdd3.append;
 	rdd4 = []; rdd4app = rdd4.append;
 
-	num1, num2, num3, num4, M1, M2, M3, M4 = CM_components()
+	num1, num2, num3, num4, M1, M2, M3, M4 = Tree_template_init()
 
 	node.daughters = []
 
@@ -119,28 +88,28 @@ def Tree(node, particles):
 			rdd3app(indx)
 			rdd4app(indx)
 
-			num1, M1 = alterCM_components(num1,r,m,M1)
+			num1, M1 = CM_Handler(num1,r,m,M1)
 		elif -1 < condr[0] < 0 and 1 > condr[1] > 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd3app(indx)
 			rdd4app(indx)
 
-			num2, M2 = alterCM_components(num2,r,m,M2)
+			num2, M2 = CM_Handler(num2,r,m,M2)
 		elif -1 < condr[0] < 0 and -1 < condr[1] < 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd4app(indx)
 
-			num3, M3 = alterCM_components(num3,r,m,M3)
+			num3, M3 = CM_Handler(num3,r,m,M3)
 		elif 1 > condr[0] > 0 and -1 < condr[1] < 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd3app(indx)
 
-			num4, M4 = alterCM_components(num4,r,m,M4)
+			num4, M4 = CM_Handler(num4,r,m,M4)
 
 	# If theres more than one particle in a node, we can create new nodes!
 	if pcount > 1:
@@ -192,38 +161,33 @@ def CellPlotter(cells, particles):
 if __name__ == "__main__":
 	time_arr = []
 
-	for i in range(10):
-		Nparticles = 100000
+	Nparticles = 100000
 	
-		x = 20 * np.random.random(size=Nparticles) - 10
-		y = 20 * np.random.random(size=Nparticles) - 10
-		vx = 200 * np.random.random(size=Nparticles)
-		vy = 200 * np.random.random(size=Nparticles)
+	x = 20 * np.random.random(size=Nparticles) - 10
+	y = 20 * np.random.random(size=Nparticles) - 10
+	vx = 200 * np.random.random(size=Nparticles)
+	vy = 200 * np.random.random(size=Nparticles)
 
-		r = np.array([x, y])
-		v = np.array([vx, vy])
+	r = np.array([x, y])
+	v = np.array([vx, vy])
 
-		particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
+	particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
 
-		obj = []
-		L = 20
+	obj = []
+	L = 20
 
-		# compute the location of the Center of Mass (COM) and total mass for the
-		# ROOT cell
-		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
-		Mgal = np.sum([p.m for p in particles])
+	# compute the location of the Center of Mass (COM) and total mass for the
+	# ROOT cell
+	Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
+	Mgal = np.sum([p.m for p in particles])
 
-		# initialize ROOT cell
-		ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
+	# initialize ROOT cell
+	ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
-		start = time.time()
-		Tree(ROOT, particles)
-		end = time.time()
+	start = time.time()
+	Tree(ROOT, particles)
+	end = time.time()
 
-		duration = end - start
-		print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
-		print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",duration, "SECONDS!")
-
-		time_arr.append(duration)
-
-	print("mean time taken: ",np.mean(duration), "s")
+	duration = end - start
+	print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
+	print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",duration, "SECONDS!")
