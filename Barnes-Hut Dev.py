@@ -1,4 +1,4 @@
-﻿from numba import jit
+﻿from numba import jit, njit
 import numpy as np
 import time
 import matplotlib
@@ -53,7 +53,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 	return particles1, particles2, particles3, particles4 
 
-@jit(nopython=True)
+@njit
 def CM_components():
 	# Temporary memory where we store numerator of R_CM
 	num1, num2, num3, num4 = np.zeros((4,2), dtype=np.float64)
@@ -63,11 +63,11 @@ def CM_components():
 
 	return num1, num2, num3, num4, M1, M2, M3, M4
 
-@jit(nopython=True)
+@njit
 def alterCM_components(num,r,m,M):
 	return (num + m*r, M + m)
 
-@jit(nopython=True)
+@njit
 def NewCellGeom(midR,L,order):
 	if order == 1:
 		newmidR = midR + np.array([L / 4, L / 4])
@@ -81,7 +81,7 @@ def NewCellGeom(midR,L,order):
 	newL = L / 2
 	return newmidR, newL
 
-@jit(nopython=True)
+@njit
 def get_condr(r, L, midR):
 	return 2*(r-midR)/L
 
@@ -171,7 +171,7 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
-@jit(nopython=True)
+@njit
 def compute_θ(r_p, R_CM, L):
 	Δr = r_p - R_CM
 	D = np.linalg.norm(Δr)
@@ -179,18 +179,17 @@ def compute_θ(r_p, R_CM, L):
 		return np.inf, Δr
 	return L/D, Δr
 
-@jit(nopython=True)
+@njit
 def GForce(M, m, Δr):
 	return (const.G*M*m)/np.dot(Δr, Δr)**(3/2)*Δr
 
-def GForce_handler(node, particle, θ=0.5, totalF=np.zeros(2)):
+def GForce_handler(node, particle, θ=0.5):
 	LdivD, Δr = compute_θ(particle.r, node.R_CM, node.L)
 	if LdivD < θ:
-		totalF += GForce(node.M, particle.m, Δr)
+		return GForce(node.M, particle.m, Δr)
 	else:
-		for d in node.daughters:
-			GForce_handler(d, particle, θ=θ, totalF=totalF)
-	return totalF
+		return np.sum(np.array([GForce_handler(d, particle, θ=θ) for d in node.daughters]))
+			
 
 
 def CellPlotter(cells, particles):
@@ -213,10 +212,11 @@ def CellPlotter(cells, particles):
 
 
 if __name__ == "__main__":
-	time_arr = []
+	time_arr1 = []
+	time_arr2 = []
 
 	for i in range(20):
-		Nparticles = 100000
+		Nparticles = 1000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
@@ -239,22 +239,31 @@ if __name__ == "__main__":
 		# initialize ROOT cell
 		ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
+		#BUILD TREE
 		start = time.time()
 		Tree(ROOT, particles)
 		end = time.time()
 
-		duration = end - start
 		print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
-		print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",duration, "SECONDS!")
 
-		time_arr.append(duration)
-		#DEBUG
-		s2 = time.time()
+		duration = end - start
+		time_arr1.append(duration)
+		print("TOTAL TREE BUILDING TIME TAKEN FOR ",len(particles), " PARTICLES IS: ",duration, " SECONDS!")
+
+		
+		
+		#COMPUTE FORCES
+		start = time.time()
 		for p in particles:
-			GForce_handler(ROOT, p)
-		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {time.time()-s2} s.")
+			print(GForce_handler(ROOT, p))
+		end = time.time()
+
+		duration = end - start
+		time_arr2.append(duration)
+		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 		
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
 	
-		print("mean time taken: ",np.mean(time_arr[1:]), "s")
+	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
+	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
