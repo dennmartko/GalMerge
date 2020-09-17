@@ -279,12 +279,9 @@ if __name__ == "__main__":
 
 	start = time.time()
 	p1,p2,p3 = FTree(ROOT, particles, obj, q)
-	tmp = [p1,p2,p3]
+	p1.join();p2.join();p3.join();
 	for i in range(4):
-		if i < 3:
-			tmp[i].join()
 		obj = obj + q.get()
-	time.sleep(1)
 	print("Waiting for all objects to finish....")
 	end = time.time()
 
