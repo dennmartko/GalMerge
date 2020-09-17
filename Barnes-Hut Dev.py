@@ -183,12 +183,16 @@ def compute_θ(r_p, R_CM, L):
 def GForce(M, m, Δr):
 	return (const.G*M*m)/np.dot(Δr, Δr)**(3/2)*Δr
 
+@njit
+def get_Fresult(a):
+	return np.zeros(2) + np.sum(a)
+
 def GForce_handler(node, particle, θ=0.5):
 	LdivD, Δr = compute_θ(particle.r, node.R_CM, node.L)
 	if LdivD < θ:
 		return GForce(node.M, particle.m, Δr)
 	else:
-		return np.sum(np.array([GForce_handler(d, particle, θ=θ) for d in node.daughters]))
+		return get_Fresult(np.array([GForce_handler(d, particle, θ=θ) for d in node.daughters]))
 			
 
 
@@ -216,7 +220,7 @@ if __name__ == "__main__":
 	time_arr2 = []
 
 	for i in range(20):
-		Nparticles = 1000
+		Nparticles = 10000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
@@ -255,7 +259,7 @@ if __name__ == "__main__":
 		#COMPUTE FORCES
 		start = time.time()
 		for p in particles:
-			print(GForce_handler(ROOT, p))
+			GForce_handler(ROOT, p)
 		end = time.time()
 
 		duration = end - start
