@@ -172,7 +172,7 @@ def Tree(node, particles):
 			node.daughters.append(D3)
 			if len(obj) == 0:
 				p3 = Process(target=Tree, args=(D3,particles3,))
-				p1.start()
+				p3.start()
 			else:
 				Tree(D3, particles3)
 		if M4 != 0:
@@ -182,7 +182,7 @@ def Tree(node, particles):
 			Tree(D4, particles4)
 
 		if len(obj) == 1:
-			p1.join();p2.start();p3.start();
+			p1.join();p2.join();p3.join();
 
 def CellPlotter(cells, particles):
 	rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
