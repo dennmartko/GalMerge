@@ -54,6 +54,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 	return particles1, particles2, particles3, particles4 
 
+
 def FTree(node, particles, obj, q):
 	obj.append(node) # append the created node
 	# Hard copy the particle array
@@ -138,10 +139,12 @@ def FTree(node, particles, obj, q):
 			newmidR, newL = NewCellGeom(node.midR, node.L, 4)
 			D4 = Cell(newmidR, newL, parent=node, M = M4, R_CM = num4 / M4)
 			node.daughters.append(D4)
-			#p4 = Process(target=Startup, args=(D4,particles4,q))
-			#p4.start()
-			Startup(D4,particles4,q)
-	return p1,p2,p3
+			p4 = Process(target=Startup, args=(D4,particles4,q))
+			p4.start()
+			#Startup(D4,particles4,q)
+		p1.join();p2.join();p3.join();p4.join()
+			
+
 
 # Create a Tree = 1/4
 def Startup(node, particles, q):
@@ -228,7 +231,6 @@ def Startup(node, particles, q):
 				node.daughters.append(D4)
 				Tree(D4, particles4)
 	Tree(node,particles)
-	print(len(obj))
 	q.put(obj)
 
 
@@ -278,13 +280,11 @@ if __name__ == "__main__":
 	ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
 	start = time.time()
-	p1,p2,p3 = FTree(ROOT, particles, obj, q)
-	p1.join();p2.join();p3.join();
-	for i in range(4):
-		obj = obj + q.get()
-	print("Waiting for all objects to finish....")
+	FTree(ROOT, particles, obj, q)
+	print("Tree built!")
 	end = time.time()
-
 	duration = end - start
+
+	obj = obj + q.get() + q.get() + q.get() + q.get()
 	print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
 	print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",duration, "SECONDS!")
