@@ -4,6 +4,7 @@ import time
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
 from numba import jit,njit
+from multiprocessing import Process
 
 #imports from own modules
 import constants as const
@@ -151,23 +152,37 @@ def Tree(node, particles):
 			newmidR, newL = NewCellGeom(node.midR, node.L, 1)
 			D1 = Cell(newmidR, node.L / 2, parent=node, M = M1, R_CM = num1 / M1)
 			node.daughters.append(D1)
-			Tree(D1, particles1)
+			if len(obj) == 0:
+				p1 = Process(target=Tree, args=(D1,particles1,))
+				p1.start()
+			else:
+				Tree(D1, particles1)
 		if M2 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 2)
 			D2 = Cell(newmidR, newL, parent=node, M = M2, R_CM = num2 / M2)
 			node.daughters.append(D2)
-			Tree(D2, particles2)
+			if len(obj) == 0:
+				p2 = Process(target=Tree, args=(D2,particles2,))
+				p2.start()
+			else:
+				Tree(D2, particles2)
 		if M3 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 3)
 			D3 = Cell(newmidR, newL, parent=node, M = M3, R_CM = num3 / M3)
 			node.daughters.append(D3)
-			Tree(D3, particles3)
+			if len(obj) == 0:
+				p3 = Process(target=Tree, args=(D3,particles3,))
+				p1.start()
+			else:
+				Tree(D3, particles3)
 		if M4 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 4)
 			D4 = Cell(newmidR, newL, parent=node, M = M4, R_CM = num4 / M4)
 			node.daughters.append(D4)
 			Tree(D4, particles4)
 
+		if len(obj) == 1:
+			p1.join();p2.start();p3.start();
 
 def CellPlotter(cells, particles):
 	rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
@@ -191,7 +206,7 @@ def CellPlotter(cells, particles):
 if __name__ == "__main__":
 	time_arr = []
 
-	for i in range(20):
+	for i in range(10):
 		Nparticles = 100000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
