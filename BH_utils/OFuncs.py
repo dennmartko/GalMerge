@@ -41,3 +41,22 @@ def NewCellGeom(midR,L,order):
 def get_condr(r, L, midR):
 	'''Transform position of particle into a simple 1D conditional array which can effectively be used'''
 	return 2*(r-midR)/L
+
+
+@njit(fastmath=True)
+def GForce(M, rp, Rcm):
+	r = rp - Rcm
+	Fg = (const.G * M)/(r[0]**2 + r[1]**2)**(3/2) * (r)
+	return Fg
+
+@njit(fastmath=True)
+def BHF_handler(rp,Rcm,L,θ):
+	r = rp - Rcm
+	D = (r[0]**2 + r[1]**2)**(1/2)
+
+	if D == 0:
+		return False
+	elif L / D <= θ:
+		return True
+	else:
+		return False

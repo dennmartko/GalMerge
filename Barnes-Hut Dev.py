@@ -1,11 +1,11 @@
 import numpy as np
 import time
 
-from numba import jit,njit
+from numba import jit,njit,cuda
 from multiprocessing import Process, Manager, Queue
 #imports from own modules
 import constants as const
-from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr
+from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr, GForce, BHF_handler
 
 
 #Prototype of a cell object
@@ -63,10 +63,14 @@ def Tree(node, particles):
 
 	# Redundant particles for each quadrant (the number in the variable name
 	# refers to the ith quadrant)
-	rdd1 = []; rdd1app = rdd1.append;
-	rdd2 = []; rdd2app = rdd2.append;
-	rdd3 = []; rdd3app = rdd3.append;
-	rdd4 = []; rdd4app = rdd4.append;
+	rdd1 = []
+	rdd1app = rdd1.append
+	rdd2 = []
+	rdd2app = rdd2.append
+	rdd3 = []
+	rdd3app = rdd3.append
+	rdd4 = []
+	rdd4app = rdd4.append
 
 	num1, num2, num3, num4, M1, M2, M3, M4 = Tree_template_init()
 
@@ -135,33 +139,24 @@ def Tree(node, particles):
 			node.daughters.append(D4)
 			Tree(D4, particles4)
 
-# Functions for computing the gravitational force on a single particle
-@njit
-def GForce(M, rp, Rcm):
-	r = rp - Rcm
-	Fg = (const.G * M)/(r[0]**2 + r[1]**2)**(3/2) * (r)
-	return Fg
-
-@njit
-def BHF_handler(rp,Rcm,L,θ):
-	r = rp - Rcm
-	D = (r[0]**2 + r[1]**2)**(1/2)
-
-	if D == 0:
-		return False
-	elif L / D <= θ:
-		return True
-	else:
-		return False
-
-def BHF(node,rp,θ=0.5):
+# Function for computing the gravitational force on a single particle
+def BHF(node,rp,force_arr,θ=0.5):
 	daughters = node.daughters
 	
 	if BHF_handler(rp,node.R_CM,node.L,θ):
 		force_arr.append(GForce(node.M,rp,node.R_CM))
 	else:
 		for i in range(len(daughters)):
-			BHF(daughters[i],rp,θ)
+			BHF(daughters[i],rp, force_arr,θ)
+
+
+def BHF_kickstart(ROOT,particles,q,θ=0.5):
+	for p in particles:
+		force_arr = []
+		BHF(ROOT, p.r, force_arr, θ=0.5)
+		Fg = (np.array(force_arr) * p.m).sum(axis=0)
+		q.put(Fg)
+
 
 
 if __name__ == "__main__":
@@ -206,16 +201,43 @@ if __name__ == "__main__":
 		
 		
 		#COMPUTE FORCES
+		NN = int(Nparticles / 4) # ONLY NUMDERS N ALOOWED THAT ARE DIVISIBLE BY 4!!
 		start = time.time()
-		'''
-		for p in particles:
-			GForce_handler(ROOT, p)
-		'''
 
+		particles1 = particles[0:NN]
+		particles2 = particles[NN:2 * NN]
+		particles3 = particles[2 * NN:3 * NN]
+		particles4 = particles[3 * NN:4 * NN]
+
+		q1 = Manager().Queue()
+		q2 = Manager().Queue()
+		q3 = Manager().Queue()
+		q4 = Manager().Queue()
+
+		processes = []
+		# spawn the processes
+		for i in range(4):
+			if i == 0:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles1,q1,0.5))
+			if i == 1:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles2,q2,0.5))
+			if i == 2:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles3,q3,0.5))
+			if i == 3:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles4,q4,0.5))
+
+			p.start()
+			processes.append(p)
+
+		for p in processes:
+			p.join()
+
+		'''
 		for p in particles:
 			force_arr = []
 			BHF(ROOT, p.r, θ=0.5)
 			Fg = np.array(force_arr) * p.m
+		'''
 		end = time.time()
 
 
