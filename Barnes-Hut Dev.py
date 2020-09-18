@@ -231,13 +231,6 @@ if __name__ == "__main__":
 
 		for p in processes:
 			p.join()
-
-		'''
-		for p in particles:
-			force_arr = []
-			BHF(ROOT, p.r, θ=0.5)
-			Fg = np.array(force_arr) * p.m
-		'''
 		end = time.time()
 
 
