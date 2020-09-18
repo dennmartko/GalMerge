@@ -1,8 +1,6 @@
 import numpy as np
 import time
 
-from matplotlib import pyplot as plt
-from matplotlib.pyplot import figure, show
 from numba import jit,njit
 from multiprocessing import Process, Manager, Queue
 #imports from own modules
@@ -137,55 +135,96 @@ def Tree(node, particles):
 			node.daughters.append(D4)
 			Tree(D4, particles4)
 
+# Functions for computing the gravitational force on a single particle
+@njit
+def GForce(M, rp, Rcm):
+	r = rp - Rcm
+	Fg = (const.G * M)/(r[0]**2 + r[1]**2)**(3/2) * (r)
+	return Fg
 
-def CellPlotter(cells, particles):
-	rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
-	scatterStyle = dict(color='k', s=2, zorder=2)
+@njit
+def BHF_handler(rp,Rcm,L,θ):
+	r = rp - Rcm
+	D = (r[0]**2 + r[1]**2)**(1/2)
 
-	fig = figure(figsize=(10, 10))
-	frame = fig.add_subplot(111)
-	frame.set_xlim(-10, 10)
-	frame.set_ylim(-10, 10)
-	frame.scatter([p.r[0] for p in particles], [p.r[1] for p in particles], **scatterStyle)
+	if D == 0:
+		return False
+	elif L / D <= θ:
+		return True
+	else:
+		return False
 
-	for o in cells:
-		rect = matplotlib.patches.Rectangle((o.midR[0] - o.L / 2,o.midR[1] - o.L / 2), width=o.L, height=o.L, **rectStyle)
-		frame.add_patch(rect)
-
-	frame.set_xlabel(r"$x$", fontsize=16)
-	frame.set_ylabel(r"$y$", fontsize=16)
-	show()
+def BHF(node,rp,θ=0.5):
+	daughters = node.daughters
+	
+	if BHF_handler(rp,node.R_CM,node.L,θ):
+		force_arr.append(GForce(node.M,rp,node.R_CM))
+	else:
+		for i in range(len(daughters)):
+			BHF(daughters[i],rp,θ)
 
 
 if __name__ == "__main__":
-	time_arr = []
+	time_arr1 = []
+	time_arr2 = []
 
-	Nparticles = 100000
+	for i in range(5):
+		Nparticles = 100000
 	
-	x = 20 * np.random.random(size=Nparticles) - 10
-	y = 20 * np.random.random(size=Nparticles) - 10
-	vx = 200 * np.random.random(size=Nparticles)
-	vy = 200 * np.random.random(size=Nparticles)
+		x = 20 * np.random.random(size=Nparticles) - 10
+		y = 20 * np.random.random(size=Nparticles) - 10
+		vx = 200 * np.random.random(size=Nparticles)
+		vy = 200 * np.random.random(size=Nparticles)
 
-	r = np.array([x, y])
-	v = np.array([vx, vy])
+		r = np.array([x, y])
+		v = np.array([vx, vy])
 
-	particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
+		particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
 
-	L = 20
-	obj = []
-	# compute the location of the Center of Mass (COM) and total mass for the
-	# ROOT cell
-	Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
-	Mgal = np.sum([p.m for p in particles])
+		obj = []
+		L = 20
 
-	# initialize ROOT cell
-	ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
+		# compute the location of the Center of Mass (COM) and total mass for the
+		# ROOT cell
+		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
+		Mgal = np.sum([p.m for p in particles])
 
-	start = time.time()
-	Tree(ROOT, particles)
-	print("Tree built!")
-	end = time.time()
-	duration = end - start
-	print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
-	print("TOTAL TIME TAKEN FOR",len(particles), " PARTICLES IS: ",duration, "SECONDS!")
+		# initialize ROOT cell
+		ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
+
+		#BUILD TREE
+		start = time.time()
+		Tree(ROOT, particles)
+		end = time.time()
+
+		print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
+
+		duration = end - start
+		time_arr1.append(duration)
+		print("TOTAL TREE BUILDING TIME TAKEN FOR ",len(particles), " PARTICLES IS: ",duration, " SECONDS!")
+
+		
+		
+		#COMPUTE FORCES
+		start = time.time()
+		'''
+		for p in particles:
+			GForce_handler(ROOT, p)
+		'''
+
+		for p in particles:
+			force_arr = []
+			BHF(ROOT, p.r, θ=0.5)
+			Fg = np.array(force_arr) * p.m
+		end = time.time()
+
+
+		duration = end - start
+		time_arr2.append(duration)
+		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
+		
+		#PLOT CELLS
+		#CellPlotter(obj, particles)
+	
+	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
+	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
