@@ -1,8 +1,8 @@
 ﻿from numba import jit, njit
 import numpy as np
 import time
-import matplotlib
 
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure, show
 
@@ -10,7 +10,8 @@ from matplotlib.pyplot import figure, show
 import constants as const
 
 #Prototype of a cell object
-class Cell:
+class Cell(object):
+	__slots__ = 'parent', 'daughters', 'M', 'R_CM', 'midR', 'L'
 	def __init__(self, midR, L, parent=None, M=None, R_CM=None):
 		self.parent = parent #parent of the current cell
 		self.daughters = None #daughters of the current cell
@@ -25,7 +26,8 @@ class Cell:
 
 
 #Prototype of a particle object
-class Particle:
+class Particle(object):
+	__slots__ = 'r', 'v', 'm'
 	def __init__(self, r, v, m=None):
 		# Position, velocity and mass
 		self.r = r
@@ -258,8 +260,7 @@ if __name__ == "__main__":
 		
 		#COMPUTE FORCES
 		start = time.time()
-		for p in particles:
-			GForce_handler(ROOT, p)
+		F = [GForce_handler(ROOT, p) for p in particles]
 		end = time.time()
 
 		duration = end - start
