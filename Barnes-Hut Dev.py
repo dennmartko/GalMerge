@@ -140,7 +140,7 @@ def Tree(node, particles):
 			Tree(D4, particles4)
 
 # Function for computing the gravitational force on a single particle
-def BHF(node,rp,force_arr,θ=0.5):
+def BHF(node,rp,force_arr,θ):
 	daughters = node.daughters
 	
 	if BHF_handler(rp,node.R_CM,node.L,θ):
@@ -153,7 +153,7 @@ def BHF(node,rp,force_arr,θ=0.5):
 def BHF_kickstart(ROOT,particles,q,θ=0.5):
 	for p in particles:
 		force_arr = []
-		BHF(ROOT, p.r, force_arr, θ=0.5)
+		BHF(ROOT, p.r, force_arr, θ)
 		Fg = (np.array(force_arr) * p.m).sum(axis=0)
 		q.put(Fg)
 
