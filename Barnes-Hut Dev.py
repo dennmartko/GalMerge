@@ -222,7 +222,7 @@ if __name__ == "__main__":
 	time_arr2 = []
 
 	for i in range(20):
-		Nparticles = 10000
+		Nparticles = 1000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
@@ -268,7 +268,7 @@ if __name__ == "__main__":
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 		
 		#PLOT CELLS
-		#CellPlotter(obj, particles)
+		CellPlotter(obj, particles)
 	
 	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
 	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
