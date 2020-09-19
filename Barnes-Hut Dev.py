@@ -34,7 +34,7 @@ class Particle:
 		self.v = v
 
 		if m is None:
-			self.m = const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
@@ -207,14 +207,14 @@ if __name__ == "__main__":
 		
 		#COMPUTE FORCES
 		N_CPU = cpu_count()
-		NN = int(Nparticles / N_CPU) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU!!
+		NN = int(Nparticles / (N_CPU-1)) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU!!
 
 		start = time.time()
 
 		# spawn the processes
 		processes = []
 		queues = []
-		for i in range(N_CPU):
+		for i in range(N_CPU-1):
 			queues.append(Manager().Queue())
 			p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], queues[i], 0.5))
 			p.start()
@@ -226,8 +226,9 @@ if __name__ == "__main__":
 		F = []
 		Fappend = F.append
 		for q in queues:
-			for i in range(Nparticles):
-				Fappend(q.get())
+			for i in range(NN):
+				qtmp = q.get()
+				Fappend(qtmp)
 
 		for p in processes:
 			p.terminate()
