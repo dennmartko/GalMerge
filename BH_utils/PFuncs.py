@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+from matplotlib import patches
 from matplotlib.pyplot import figure, show
 
 def CellPlotter(cells, particles):
@@ -12,7 +13,7 @@ def CellPlotter(cells, particles):
 	frame.scatter([p.r[0] for p in particles], [p.r[1] for p in particles], **scatterStyle)
 
 	for o in cells:
-		rect = matplotlib.patches.Rectangle((o.midR[0] - o.L / 2,o.midR[1] - o.L / 2), width=o.L, height=o.L, **rectStyle)
+		rect = patches.Rectangle((o.midR[0] - o.L / 2,o.midR[1] - o.L / 2), width=o.L, height=o.L, **rectStyle)
 		frame.add_patch(rect)
 
 	frame.set_xlabel(r"$x$", fontsize=16)

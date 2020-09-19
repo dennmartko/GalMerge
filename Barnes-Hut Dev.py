@@ -1,15 +1,17 @@
 import numpy as np
 import time
 
-from numba import jit,njit,cuda
-from multiprocessing import Process, Manager, Queue
+from multiprocessing import Process, Manager, cpu_count
+
 #imports from own modules
 import constants as const
 from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr, GForce, BHF_handler
+from BH_utils.PFuncs import CellPlotter
 
 
 #Prototype of a cell object
 class Cell:
+	__slots__ = ('midR', 'L', 'parent', 'M', 'R_CM', 'daughters')
 	def __init__(self, midR, L, parent=None, M=None, R_CM=None):
 		self.parent = parent #parent of the current cell
 		self.daughters = None #daughters of the current cell
@@ -25,13 +27,14 @@ class Cell:
 
 #Prototype of a particle object
 class Particle:
+	__slots__ = ('r', 'v', 'm')
 	def __init__(self, r, v, m=None):
 		# Position, velocity and mass
 		self.r = r
 		self.v = v
 
 		if m is None:
-			self.m = 2 #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = const.Msol #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
@@ -55,6 +58,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 def Tree(node, particles):
 	obj.append(node) # append the created node
+
 	# Hard copy the particle array
 	particles1 = particles.copy()
 	particles2 = particles.copy()
@@ -76,8 +80,9 @@ def Tree(node, particles):
 
 	node.daughters = []
 
-	# Init
+	# Initialize particle counter
 	pcount = 0
+
 	# Check if more than 1 particles inside square
 	for indx, p in enumerate(particles):
 		r = p.r
@@ -139,22 +144,22 @@ def Tree(node, particles):
 			node.daughters.append(D4)
 			Tree(D4, particles4)
 
-# Function for computing the gravitational force on a single particle
-def BHF(node,rp,force_arr,θ=0.5):
+
+# Functions for computing the gravitational force on a single particle
+def BHF(node, rp, force_arr, θ=0.5):
 	daughters = node.daughters
 	
-	if BHF_handler(rp,node.R_CM,node.L,θ):
-		force_arr.append(GForce(node.M,rp,node.R_CM))
+	if BHF_handler(rp, node.R_CM, node.L,θ):
+		force_arr.append(GForce(node.M, rp, node.R_CM))
 	else:
 		for i in range(len(daughters)):
-			BHF(daughters[i],rp, force_arr,θ)
+			BHF(daughters[i], rp, force_arr, θ)
 
-
-def BHF_kickstart(ROOT,particles,q,θ=0.5):
+def BHF_kickstart(ROOT, particles, q, θ=0.5):
 	for p in particles:
 		force_arr = []
-		BHF(ROOT, p.r, force_arr, θ=0.5)
-		Fg = (np.array(force_arr) * p.m).sum(axis=0)
+		BHF(ROOT, p.r, force_arr, θ)
+		Fg = np.sum(np.array(force_arr) * p.m, axis=0)
 		q.put(Fg)
 
 
@@ -201,43 +206,39 @@ if __name__ == "__main__":
 		
 		
 		#COMPUTE FORCES
-		NN = int(Nparticles / 4) # ONLY NUMDERS N ALOOWED THAT ARE DIVISIBLE BY 4!!
+		N_CPU = cpu_count()
+		NN = int(Nparticles / N_CPU) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU!!
+
 		start = time.time()
 
-		particles1 = particles[0:NN]
-		particles2 = particles[NN:2 * NN]
-		particles3 = particles[2 * NN:3 * NN]
-		particles4 = particles[3 * NN:4 * NN]
-
-		q1 = Manager().Queue()
-		q2 = Manager().Queue()
-		q3 = Manager().Queue()
-		q4 = Manager().Queue()
-
-		processes = []
 		# spawn the processes
-		for i in range(4):
-			if i == 0:
-				p = Process(target=BHF_kickstart, args=(ROOT,particles1,q1,0.5))
-			if i == 1:
-				p = Process(target=BHF_kickstart, args=(ROOT,particles2,q2,0.5))
-			if i == 2:
-				p = Process(target=BHF_kickstart, args=(ROOT,particles3,q3,0.5))
-			if i == 3:
-				p = Process(target=BHF_kickstart, args=(ROOT,particles4,q4,0.5))
-
+		processes = []
+		queues = []
+		for i in range(N_CPU):
+			queues.append(Manager().Queue())
+			p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], queues[i], 0.5))
 			p.start()
 			processes.append(p)
 
 		for p in processes:
 			p.join()
+
+		F = []
+		Fappend = F.append
+		for q in queues:
+			for i in range(Nparticles):
+				Fappend(q.get())
+
+		for p in processes:
+			p.terminate()
+
 		end = time.time()
-
-
 		duration = end - start
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
-		
+
+		print(len(F))
+
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
 	
