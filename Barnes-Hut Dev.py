@@ -207,16 +207,24 @@ if __name__ == "__main__":
 		
 		#COMPUTE FORCES
 		N_CPU = cpu_count()
-		NN = int(Nparticles / (N_CPU-1)) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU!!
+		NN = int(Nparticles / (N_CPU - 1)) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU-1!!
 
 		start = time.time()
 
 		# spawn the processes
-		processes = []
-		queues = []
-		for i in range(N_CPU-1):
+		processes = [] #array with process instances
+		queues = [] #array of queues for each process
+		lenp = [] #array with the length of the particle array passed to each process
+		lenp_append = lenp.append
+		for i in range(N_CPU - 1):
 			queues.append(Manager().Queue())
-			p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], queues[i], 0.5))
+			#ensure that the last particle is also included
+			if i == N_CPU - 2:
+				lenp_append(Nparticles - i * NN)
+				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:-1], queues[i], 0.5))
+			else:
+				lenp_append(NN)
+				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], queues[i], 0.5))
 			p.start()
 			processes.append(p)
 
@@ -225,8 +233,9 @@ if __name__ == "__main__":
 
 		F = []
 		Fappend = F.append
-		for q in queues:
-			for i in range(NN):
+		print(lenp)
+		for n, q in enumerate(queues):
+			for i in range(lenp[n]):
 				qtmp = q.get()
 				Fappend(qtmp)
 
