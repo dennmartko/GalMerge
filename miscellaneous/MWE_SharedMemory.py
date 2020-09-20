@@ -1,6 +1,6 @@
 #Sharing a multiprocessing.Array sharedctype's memory location with a numpy array goes as follows:
 from ctypes import c_double
-from multiprocessing import Process, Array
+from multiprocessing import Process, Array, set_start_method
 import numpy as np
 
 def add_a0(a):
@@ -8,6 +8,7 @@ def add_a0(a):
 	print("In subprocess:",a)
 
 if __name__ == "__main__":
+	set_start_method("spawn")
 	#dimensions for the matrix
 	dim = (4,2)
 

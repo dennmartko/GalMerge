@@ -1,7 +1,8 @@
 import numpy as np
 import time
 
-from multiprocessing import Process, Manager, cpu_count, Array
+import sys
+from multiprocessing import Process, Pipe, cpu_count, Array
 from ctypes import c_double
 
 #imports from own modules
@@ -156,12 +157,20 @@ def BHF(node, rp, force_arr, θ=0.5):
 		for i in range(len(daughters)):
 			BHF(daughters[i], rp, force_arr, θ)
 
-def BHF_kickstart(ROOT, particles, Forces, θ=0.5):
+def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
+	#Forces will be None if the platform is 'win32'. In that case we should receive Forces through a duplex Pipe.
+	if Forces is None and conn is not None:
+		Forces = conn.recv()
+
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ)
 		Fg = np.sum(np.array(force_arr) * p.m, axis=0)
 		Forces[i,:] = Fg.astype(dtype=c_double)
+
+	#send the updated Forces array back through the Pipe
+	if conn is not None:
+		conn.send(Forces)
 
 
 
@@ -205,9 +214,11 @@ if __name__ == "__main__":
 		print("TOTAL TREE BUILDING TIME TAKEN FOR ",len(particles), " PARTICLES IS: ",duration, " SECONDS!")
 
 		
-		
-		#COMPUTE FORCES
+		################################################
+		##    COMPUTE FORCES USING MULTIPROCESSING    ##
+		################################################
 		N_CPU = cpu_count() #get the number of CPU cores
+		PLATFORM = sys.platform #get the patform on which this script is running
 
 		#NN defines the slice ranges for the particle array.
 		#We want to split the particles array in N_CPU-1 parts, i.e. the number of feasible subprocesses on this machine.
@@ -215,6 +226,9 @@ if __name__ == "__main__":
 
 		start = time.time()
 
+		#If the platform is 'win32' we will use pipes. The parent connector will be stored in the connections list.
+		if PLATFORM == 'win32':
+			connections = []
 		processes = [] #array with process instances
 
 		#create a multiprocessing array for the force on each particle in shared memory
@@ -226,11 +240,30 @@ if __name__ == "__main__":
 		for i in range(N_CPU - 1):
 			#ensure that the last particle is also included when Nparticles / (N_CPU - 1) is not an integer
 			if i == N_CPU - 2:
-				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Forces[i*NN:]), kwargs=dict(θ=0.5)) #spwan process
+				if PLATFORM == 'win32':
+					parent_conn, child_conn = Pipe() #create a duplex Pipe
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
+					p.start() #start process
+					parent_conn.send(Forces[i*NN:]) #send Forces array through Pipe
+					connections.append(parent_conn)
+				else:
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i*NN:], θ=0.5)) #spawn process
+					p.start() #start process
 			else:
-				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Forces[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.5)) #spawn process
-			p.start() #start process
+				if PLATFORM == 'win32':
+					parent_conn, child_conn = Pipe() #create a duplex Pipe
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
+					p.start() #start process
+					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
+					connections.append(parent_conn)
+				else:
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=0.5)) #spawn process
+					p.start() #start process
 			processes.append(p)
+
+		#if platform is 'win32' => receive filled Forces arrays through Pipe
+		if PLATFORM == 'win32':
+			Forces = np.concatenate([conn.recv() for conn in connections], axis=0)
 
 		#join processes
 		for p in processes:
@@ -245,7 +278,7 @@ if __name__ == "__main__":
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 
-		print(Forces)
+		print(Forces.shape)
 
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
