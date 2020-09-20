@@ -1,7 +1,8 @@
 import numpy as np
 import time
 
-from multiprocessing import Process, Manager, cpu_count
+from multiprocessing import Process, Manager, cpu_count, Array
+from ctypes import c_double
 
 #imports from own modules
 import constants as const
@@ -155,12 +156,12 @@ def BHF(node, rp, force_arr, θ=0.5):
 		for i in range(len(daughters)):
 			BHF(daughters[i], rp, force_arr, θ)
 
-def BHF_kickstart(ROOT, particles, q, θ=0.5):
-	for p in particles:
+def BHF_kickstart(ROOT, particles, Forces, θ=0.5):
+	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ)
 		Fg = np.sum(np.array(force_arr) * p.m, axis=0)
-		q.put(Fg)
+		Forces[i,:] = Fg.astype(dtype=c_double)
 
 
 
@@ -206,39 +207,36 @@ if __name__ == "__main__":
 		
 		
 		#COMPUTE FORCES
-		N_CPU = cpu_count()
-		NN = int(Nparticles / (N_CPU - 1)) # ONLY NUMDERS NN ALLOWED THAT ARE DIVISIBLE BY N_CPU-1!!
+		N_CPU = cpu_count() #get the number of CPU cores
+
+		#NN defines the slice ranges for the particle array.
+		#We want to split the particles array in N_CPU-1 parts, i.e. the number of feasible subprocesses on this machine.
+		NN = int(Nparticles / (N_CPU - 1))
 
 		start = time.time()
 
-		# spawn the processes
 		processes = [] #array with process instances
-		queues = [] #array of queues for each process
-		lenp = [] #array with the length of the particle array passed to each process
-		lenp_append = lenp.append
+
+		#create a multiprocessing array for the force on each particle in shared memory
+		mp_Forces = Array(c_double, 2*Nparticles)
+		#create a 2D numpy array sharing its memory location with the multiprocessing array
+		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 2))
+
+		#spawn the processes
 		for i in range(N_CPU - 1):
-			queues.append(Manager().Queue())
-			#ensure that the last particle is also included
+			#ensure that the last particle is also included when Nparticles / (N_CPU - 1) is not an integer
 			if i == N_CPU - 2:
-				lenp_append(Nparticles - i * NN)
-				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:-1], queues[i], 0.5))
+				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Forces[i*NN:]), kwargs=dict(θ=0.5)) #spwan process
 			else:
-				lenp_append(NN)
-				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], queues[i], 0.5))
-			p.start()
+				p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Forces[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.5)) #spawn process
+			p.start() #start process
 			processes.append(p)
 
+		#join processes
 		for p in processes:
 			p.join()
 
-		F = []
-		Fappend = F.append
-		print(lenp)
-		for n, q in enumerate(queues):
-			for i in range(lenp[n]):
-				qtmp = q.get()
-				Fappend(qtmp)
-
+		#terminate processes
 		for p in processes:
 			p.terminate()
 
@@ -247,7 +245,7 @@ if __name__ == "__main__":
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 
-		print(len(F))
+		print(Forces)
 
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
