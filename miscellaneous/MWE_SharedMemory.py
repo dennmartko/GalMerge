@@ -1,34 +1,44 @@
 #Sharing a multiprocessing.Array sharedctype's memory location with a numpy array goes as follows:
-
-from ctypes import c_float
-from multiprocessing import Array
+from ctypes import c_double
+from multiprocessing import Process, Array
 import numpy as np
 
-#dimensions for the matrix
-dim = (4,2)
+def add_a0(a):
+	a[0] += 1
+	print("In subprocess:",a)
 
-#The Array function from multiprocessing can only allocate 1D arrays
-a_mp = Array(c_float, dim[0]*dim[1]) #we set the datatype to c_float
+if __name__ == "__main__":
+	#dimensions for the matrix
+	dim = (4,2)
 
-print(f"Multiprocessing array: {a_mp[:]}")
+	#The Array function from multiprocessing can only allocate 1D arrays
+	a_mp = Array(c_double, dim[0]*dim[1]) #we set the datatype to c_float
 
-#Create a numpy array at the same memory location
-a_np = np.frombuffer(a_mp.get_obj(), dtype=c_float)
+	print(f"Multiprocessing array: {a_mp[:]}")
 
-print(f"Numpy array: {a_np}")
+	#Create a numpy array at the same memory location
+	a_np = np.frombuffer(a_mp.get_obj(), dtype=c_double)
 
-#reshape the numpy array making it 2D (still sharing same memory)
-b_np = np.reshape(a_np, dim)
+	print(f"Numpy array: {a_np}")
 
-print(f"Reshaped numpy array: {b_np}")
+	#reshape the numpy array making it 2D (still sharing same memory)
+	b_np = np.reshape(a_np, dim)
 
-#Edit b_np
-b_np[0] += 1
+	print(f"Reshaped numpy array: {b_np}")
 
-print(f"b_np has changed: {b_np}")
+	#Edit b_np
+	#make process and pass slice to it
+	p = Process(target=add_a0, args=(b_np[:-1],))
+	p.start() #start process
+	p.join() #join process
+	p.terminate() #terminate process
+	print("In main:",b_np[:-1]) #print the result
+	#b_np[0] += 1
 
-#a_np has also changed
-print(f"a_np has also changed: {a_np}")
+	print(f"b_np has changed: {b_np}")
 
-#The multiprocessing array has also changed!
-print(f"a_mp has also changed: {a_np[:]}")
+	#a_np has also changed
+	print(f"a_np has also changed: {a_np}")
+
+	#The multiprocessing array has also changed!
+	print(f"a_mp has also changed: {a_np[:]}")
