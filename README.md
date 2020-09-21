@@ -5,5 +5,3 @@ To do this simulation we will randomly generate two clouds of particles and let 
 In addition, we also hope to sample spiral galaxies for our dynamical simulation.
 
 With our simulations we hope to find answers to the following questions...
-
-test
