@@ -160,7 +160,7 @@ def BHF(node, rp, force_arr, θ=0.5):
 def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
 	#Forces will be None if the platform is 'win32'. In that case we should receive Forces through a duplex Pipe.
 	if Forces is None and conn is not None:
-		Forces = conn.recv()
+		Forces = conn.recv() #waits until there's something to receive
 
 	for i, p in enumerate(particles):
 		force_arr = []
@@ -171,6 +171,23 @@ def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
 	#send the updated Forces array back through the Pipe
 	if conn is not None:
 		conn.send(Forces)
+		conn.close()
+
+#receive something via a connection and close the connection
+def connection_receiveAndClose(conn):
+	tmp = conn.recv()
+	conn.close()
+	return tmp
+
+#function to join and terminate the processes
+def processes_joinAndTerminate(processes):
+	#join processes
+	for p in processes:
+		p.join()
+
+	#terminate processes
+	for p in processes:
+		p.terminate()
 
 
 
@@ -263,22 +280,17 @@ if __name__ == "__main__":
 
 		#if platform is 'win32' => receive filled Forces arrays through Pipe
 		if PLATFORM == 'win32':
-			Forces = np.concatenate([conn.recv() for conn in connections], axis=0)
+			Forces = np.concatenate([connection_receiveAndClose(conn) for conn in connections], axis=0)
 
-		#join processes
-		for p in processes:
-			p.join()
-
-		#terminate processes
-		for p in processes:
-			p.terminate()
+		#join and terminate all processes
+		processes_joinAndTerminate(processes)
 
 		end = time.time()
 		duration = end - start
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 
-		print(Forces.shape)
+		print(Forces)
 
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
