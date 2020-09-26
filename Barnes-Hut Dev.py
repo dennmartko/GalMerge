@@ -196,7 +196,7 @@ if __name__ == "__main__":
 	time_arr2 = []
 
 	for i in range(5):
-		Nparticles = 100000
+		Nparticles = 100
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
