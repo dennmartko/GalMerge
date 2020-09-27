@@ -61,4 +61,33 @@ Once having obtained $N$ celestial bodies with Spherical coordinates $(r, \phi, 
 		z &= r\cos(\theta)
 	\end{cases}
 \end{equation}
+\subsection{Velocities and the Jaffe profile}
+Now that we have developed a method to randomly generate $N$ celestial bodies we want to develop a method to randomly generate the velocity vector for each of these bodies. This process is complicated by the requirement that the galaxy needs to be somewhat stable. To ensure that the Galaxy doesn't fly apart the magnitude of the velocity vector of a body should not exceed the local escape velocity of the Galaxy.\\
+For large $N$ the escape velocity at position $r$ can be approximated by using the gravitational potential corresponding to the Jaffe profile. The escape velocity is given by:
+\begin{equation*}
+	\frac{1}{2}v_e^2 = -\Phi_{J}(r) \implies \boxed{v_e = \sqrt{-2\Phi_{J}(r)}}
+\end{equation*}
+Since the density given by the Jaffe profile blows up at $r=0$ we need to define the minimum radial distance ($r_{min}$) at which celestial bodies are found. This will come in handy when computing the gravitational potential to prevent it from blowing up. The gravitational potential can be computed by solving the Poisson equation:
+\begin{equation*}
+	\nabla^2\Phi_{J} = 4\pi G\rho_{J}(r)
+\end{equation*}
+noticing that $\rho_{J}(r)$ is spherically symmetric so should $\Phi_{J}$ be. Therefore, $\Phi_J = \Phi_J(r)$. Thus the Poisson equation reads:
+\begin{equation*}
+	\frac{1}{r^2}\frac{\partial}{\partial r}\left(r^2\frac{\partial\Phi_{J}(r)}{\partial r}\right) = G\rho_0\left(\frac{r}{r_0}\right)^{-2}\left(1+\frac{r}{r_0}\right)^{-2}
+\end{equation*}
+We can solve this through double integration from $r_{min}$ to $r$. This yields:
+\begin{align*}
+	r^2\frac{\partial\Phi_{J}(r)}{\partial r} &= \int\limits_{r_{min}}^{r}G\rho_0r_0^{2}\left(1+\frac{r'}{r_0}\right)^{-2}dr' = -G\rho_0r_0^{3}\left.\left(1+\frac{r'}{r_0}\right)^{-1}\right|_{r_{min}}^{r}\\
+	&= G\rho_0r_0^{3}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - \left(1+\frac{r}{r_0}\right)^{-1}\right\}\\
+	\implies \Phi_J(r) &= G\rho_0r_0\int\limits_{r_{min}}^{r}\left(\frac{r'}{r_0}\right)^{-2}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - \left(1+\frac{r'}{r_0}\right)^{-1}\right\}dr'\\
+	&= G\rho_0r_0^2\int\limits_{x_{min}}^{x}x'^{-2}\left\{\left(1+x_{min}\right)^{-1} - \left(1+x'\right)^{-1}\right\}dx'\\
+	&= -\frac{GM_{tot}}{r_0}\left.\left(\frac{\left(1+x_{min}\right)^{-1}+x'\ln(1+x')-1}{x'}-\ln(x')\right)\right|_{x_{min}}^{x}\\
+	&= -\frac{GM_{tot}}{r}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\}-\frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r}{r_0}\right)-\ln\left(\frac{r}{r_0}\right)\right\}\\
+	& + \frac{GM_{tot}}{r_{min}}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\} + \frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r_{min}}{r_0}\right)-\ln\left(\frac{r_{min}}{r_0}\right)\right\}
+\end{align*}
+Thus the expression for the Jaffe potential is:
+\begin{align}
+	\Phi_J(r) &= -\frac{GM_{tot}}{r}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\}-\frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r}{r_0}\right)-\ln\left(\frac{r}{r_0}\right)\right\}\nonumber\\
+	& + \frac{GM_{tot}}{r_{min}}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\} + \frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r_{min}}{r_0}\right)-\ln\left(\frac{r_{min}}{r_0}\right)\right\}
+\end{align}
 \end{document}
