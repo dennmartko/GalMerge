@@ -1,19 +1,15 @@
 import numpy as np
 import time
 
-import sys
-from multiprocessing import Process, Pipe, cpu_count, Array
-from ctypes import c_double
-
+from numba import jit,njit,cuda
+from multiprocessing import Process, Manager, Queue
 #imports from own modules
 import constants as const
 from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr, GForce, BHF_handler
-from BH_utils.PFuncs import CellPlotter
 
 
 #Prototype of a cell object
 class Cell:
-	__slots__ = ('midR', 'L', 'parent', 'M', 'R_CM', 'daughters')
 	def __init__(self, midR, L, parent=None, M=None, R_CM=None):
 		self.parent = parent #parent of the current cell
 		self.daughters = None #daughters of the current cell
@@ -29,14 +25,13 @@ class Cell:
 
 #Prototype of a particle object
 class Particle:
-	__slots__ = ('r', 'v', 'm')
 	def __init__(self, r, v, m=None):
 		# Position, velocity and mass
 		self.r = r
 		self.v = v
 
 		if m is None:
-			self.m = 1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 2 #const.Msol #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
@@ -59,8 +54,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 
 def Tree(node, particles):
-	#obj.append(node) # append the created node
-
+	obj.append(node) # append the created node
 	# Hard copy the particle array
 	particles1 = particles.copy()
 	particles2 = particles.copy()
@@ -82,9 +76,8 @@ def Tree(node, particles):
 
 	node.daughters = []
 
-	# Initialize particle counter
+	# Init
 	pcount = 0
-
 	# Check if more than 1 particles inside square
 	for indx, p in enumerate(particles):
 		r = p.r
@@ -146,49 +139,23 @@ def Tree(node, particles):
 			node.daughters.append(D4)
 			Tree(D4, particles4)
 
-
-# Functions for computing the gravitational force on a single particle
-def BHF(node, rp, force_arr, θ=0.5):
+# Function for computing the gravitational force on a single particle
+def BHF(node,rp,force_arr,θ=0.5):
 	daughters = node.daughters
-
-	if BHF_handler(rp, node.R_CM, node.L,θ):
-		force_arr.append(GForce(node.M, rp, node.R_CM))
+	
+	if BHF_handler(rp,node.R_CM,node.L,θ):
+		force_arr.append(GForce(node.M,rp,node.R_CM))
 	else:
 		for i in range(len(daughters)):
-			BHF(daughters[i], rp, force_arr, θ)
+			BHF(daughters[i],rp, force_arr,θ)
 
-def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
-	#Forces will be None if the platform is 'win32'. In that case we should receive Forces through a duplex Pipe.
-	if Forces is None and conn is not None:
-		Forces = conn.recv() #waits until there's something to receive
 
-	for i, p in enumerate(particles):
+def BHF_kickstart(ROOT,particles,q,θ=0.5):
+	for p in particles:
 		force_arr = []
-		BHF(ROOT, p.r, force_arr, θ)
-		print(len(force_arr))
-		Fg = np.sum(np.array(force_arr) * p.m, axis=0)
-		Forces[i,:] = Fg.astype(dtype=c_double)
-
-	#send the updated Forces array back through the Pipe
-	if conn is not None:
-		conn.send(Forces)
-		conn.close()
-
-#receive something via a connection and close the connection
-def connection_receiveAndClose(conn):
-	tmp = conn.recv()
-	conn.close()
-	return tmp
-
-#function to join and terminate the processes
-def processes_joinAndTerminate(processes):
-	#join processes
-	for p in processes:
-		p.join()
-
-	#terminate processes
-	for p in processes:
-		p.terminate()
+		BHF(ROOT, p.r, force_arr, θ=0.5)
+		Fg = (np.array(force_arr) * p.m).sum(axis=0)
+		q.put(Fg)
 
 
 
@@ -197,7 +164,7 @@ if __name__ == "__main__":
 	time_arr2 = []
 
 	for i in range(5):
-		Nparticles = 100
+		Nparticles = 100000
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
@@ -232,69 +199,47 @@ if __name__ == "__main__":
 		print("TOTAL TREE BUILDING TIME TAKEN FOR ",len(particles), " PARTICLES IS: ",duration, " SECONDS!")
 
 		
-		################################################
-		##    COMPUTE FORCES USING MULTIPROCESSING    ##
-		################################################
-		N_CPU = cpu_count() #get the number of CPU cores
-		PLATFORM = sys.platform #get the patform on which this script is running
-
-		#NN defines the slice ranges for the particle array.
-		#We want to split the particles array in N_CPU-1 parts, i.e. the number of feasible subprocesses on this machine.
-		NN = int(Nparticles / (N_CPU - 1))
-
+		
+		#COMPUTE FORCES
+		NN = int(Nparticles / 4) # ONLY NUMDERS N ALOOWED THAT ARE DIVISIBLE BY 4!!
 		start = time.time()
 
-		#If the platform is 'win32' we will use pipes. The parent connector will be stored in the connections list.
-		if PLATFORM == 'win32':
-			connections = []
-		processes = [] #array with process instances
+		particles1 = particles[0:NN]
+		particles2 = particles[NN:2 * NN]
+		particles3 = particles[2 * NN:3 * NN]
+		particles4 = particles[3 * NN:4 * NN]
 
-		#create a multiprocessing array for the force on each particle in shared memory
-		mp_Forces = Array(c_double, 2*Nparticles)
-		#create a 2D numpy array sharing its memory location with the multiprocessing array
-		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 2))
+		q1 = Manager().Queue()
+		q2 = Manager().Queue()
+		q3 = Manager().Queue()
+		q4 = Manager().Queue()
 
-		#spawn the processes
-		for i in range(N_CPU - 1):
-			#ensure that the last particle is also included when Nparticles / (N_CPU - 1) is not an integer
-			if i == N_CPU - 2:
-				if PLATFORM == 'win32':
-					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
-					p.start() #start process
-					parent_conn.send(Forces[i*NN:]) #send Forces array through Pipe
-					connections.append(parent_conn)
-				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i*NN:], θ=0.5)) #spawn process
-					p.start() #start process
-			else:
-				if PLATFORM == 'win32':
-					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
-					p.start() #start process
-					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
-					connections.append(parent_conn)
-				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=0.5)) #spawn process
-					p.start() #start process
+		processes = []
+		# spawn the processes
+		for i in range(4):
+			if i == 0:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles1,q1,0.5))
+			if i == 1:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles2,q2,0.5))
+			if i == 2:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles3,q3,0.5))
+			if i == 3:
+				p = Process(target=BHF_kickstart, args=(ROOT,particles4,q4,0.5))
+
+			p.start()
 			processes.append(p)
 
-		#if platform is 'win32' => receive filled Forces arrays through Pipe
-		if PLATFORM == 'win32':
-			Forces = np.concatenate([connection_receiveAndClose(conn) for conn in connections], axis=0)
-
-		#join and terminate all processes
-		processes_joinAndTerminate(processes)
-
+		for p in processes:
+			p.join()
 		end = time.time()
+
+
 		duration = end - start
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
-
-		print(Forces)
-
+		
 		#PLOT CELLS
-		CellPlotter(obj, particles)
+		#CellPlotter(obj, particles)
 	
 	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
 	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
