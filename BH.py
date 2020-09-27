@@ -142,6 +142,8 @@ def Tree(node, particles):
 # Function for computing the gravitational force on a single particle
 def BHF(node,rp,force_arr,θ=0.5):
 	daughters = node.daughters
+	print(daughters)
+	time.sleep(0.1)
 	
 	if BHF_handler(rp,node.R_CM,node.L,θ):
 		force_arr.append(GForce(node.M,rp,node.R_CM))
