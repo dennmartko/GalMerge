@@ -20,7 +20,7 @@ def Tree_template_init():
 @njit
 def CM_Handler(num,r,m,M):
 	'''Compute the numerator and denominator seperately during iteration process '''
-	return (num + m*r, M + m)
+	return (num + m * r, M + m)
 
 @njit
 def NewCellGeom(midR,L,order):
@@ -40,19 +40,19 @@ def NewCellGeom(midR,L,order):
 @njit
 def get_condr(r, L, midR):
 	'''Transform position of particle into a simple 1D conditional array which can effectively be used'''
-	return 2*(r-midR)/L
+	return 2 * (r - midR) / L
 
 
 @njit(fastmath=True)
 def GForce(M, rp, Rcm):
 	r = rp - Rcm
-	Fg = (const.G * M)/(r[0]**2 + r[1]**2)**(3/2) * (r)
+	Fg = (const.G * M) / (r[0] ** 2 + r[1] ** 2) ** (3 / 2) * (r)
 	return Fg
 
 @njit(fastmath=True)
-def BHF_handler(rp,Rcm,L,θ):
+def BHF_handler(rp, Rcm, L, θ):
 	r = rp - Rcm
-	D = (r[0]**2 + r[1]**2)**(1/2)
+	D = (r[0] ** 2 + r[1] ** 2) ** (1 / 2)
 
 	if D == 0:
 		return False
