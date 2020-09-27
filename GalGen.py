@@ -5,7 +5,8 @@ from mpl_toolkits.mplot3d import Axes3D
 #own imports
 import constants as const
 
-#module for randomly generating galaxies
+# module for randomly generating galaxies
+
 def jaffe_transform(p, Mtot, r0):
     rmax = 99*r0 #99% #19 * r0 #95% of the total mass of the galaxy is confined within this region
     p[:,0] = Mtot / (4 * np.pi) * (1 - (1 + rmax / r0) ** (-1)) * p[:,0] - Mtot / (4 * np.pi) #rescale to u
@@ -25,20 +26,47 @@ def jaffe_transform(p, Mtot, r0):
     return p
 
 
-def generate_r(N, type="jaffe"):
+def generate_r(N, type="jaffe", Mtot=10**9*const.Msol, r0=14*const.kpc2m):
     p = np.random.rand(N, 3)
     if type == "jaffe":
-        p = jaffe_transform(p, Mtot=10**9*const.G, r0=14*const.kpc2m)*const.m2kpc
+        p = jaffe_transform(p, Mtot=Mtot, r0=r0)
     return p
     
 
-def generate_v(N):
-    pass
+def generate_v(N, mag_r, Mtot, disp):
+    def ve(M, r):
+        if M > 0:
+            return np.sqrt(2*const.G*M/r)
+        else:
+            return 0
 
-def generate(N):
+    vesc = np.empty(N)
+    for i in range(N):
+        vesc[i] = ve(i*Mtot/N, mag_r[i]) #compute the escape velocity for each particle
+
+    v = np.random.normal(loc=0, scale=disp, size=(N,3))
+    for i in range(N):
+        if np.linalg.norm(v[i]) > vesc[i] and vesc[i] != 0:
+            tryagain = True
+            while tryagain:
+                vtmp = np.random.normal(loc=0, scale=disp, size=3)
+                if np.linalg.norm(vtmp) <= vesc[i]:
+                    v[i] = vtmp
+                    tryagain = False
+
+    return v
+
+
+
+def generate(N, Mtot=10**9*const.Msol, r0=14*const.kpc2m, disp=300):
     # N: number of particles to generate
-    r = generate_r(N)
-    v = generate_v(N)
+    r = generate_r(N, type="jaffe", Mtot=Mtot, r0=r0)
+    mag_r = np.linalg.norm(r, axis=1) #size of r
+    indices = np.argsort(mag_r)
+    r = r[indices,:] #sort r according to the size of each position vector
+    mag_r = mag_r[indices] #sort the r size array
+
+    v = generate_v(N, mag_r, Mtot, disp)
     return r, v
 
 def GeneratorPlot(p, type="spatial", histograms=False):
@@ -78,5 +106,6 @@ def GeneratorPlot(p, type="spatial", histograms=False):
         plt.show()
 
 if __name__ == "__main__":
-    r = generate_r(100000)
-    GeneratorPlot(r, type="spatial", histograms=True)
+    r, v = generate(100000)
+    GeneratorPlot(r*const.m2kpc, type="spatial", histograms=True)
+    GeneratorPlot(v*10**(-3), type="velocity")
