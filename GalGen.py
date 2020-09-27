@@ -78,5 +78,5 @@ def GeneratorPlot(p, type="spatial", histograms=False):
         plt.show()
 
 if __name__ == "__main__":
-    r = generate_r(100000)
+    r = generate_r(10000)
     GeneratorPlot(r, type="spatial", histograms=True)
