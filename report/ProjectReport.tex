@@ -1,0 +1,93 @@
+\documentclass[]{article}
+
+\usepackage{amsmath}
+
+%opening
+\title{}
+\author{Marten Lourens (s3435040)}
+
+\begin{document}
+
+\maketitle
+
+\section{Randomly generating Galaxies}
+\subsection{Jaffe profile}
+To randomly generate the locations of celestial bodies in an elliptical galaxy we used the Jaffe profile. The expression for the Jaffe profile is as follows:
+\begin{equation}
+	\rho_{J}(r) = \frac{\rho_0}{4\pi}\left(\frac{r}{r_0}\right)^{-2}\left(1+\frac{r}{r_0}\right)^{-2}
+\end{equation}
+where $\rho_0$ and $r_0$ are scaling parameters that can be adjusted to generate different galaxies. For instance, $\rho_0$ and $r_0$ both relate to the total mass of the galaxy: $M_{tot}=\rho_0 r_0^3$.
+We randomly generated locations by first generating according to a uniform distribution and then transforming to different coordinates. What these coordinate transformations need to look like depends on the density profile above. To find the transformations we can use the fact that the mass element of the system stays invariant. Therefore:
+\begin{align}
+	dM &= \rho_J(r)dV = \rho_{J}(r)dxdydz = \rho_{J}(r)\left|\frac{\partial(x, y, z)}{\partial(r, \phi, \theta)}\right|drd\phi d\theta\nonumber\\
+	&= \rho_{J}(r)r^2\sin(\theta)drd\phi d\theta = dudvdw\label{eq:2}
+\end{align}
+where the coordinates $(u, v, w)$ are drawn from a uniform distribution. By looking at equation \eqref{eq:2} we can obtain the following set of equations:
+\begin{equation}
+	\begin{cases}
+		\rho_{J}(r)r^2dr &= du\\
+		d\phi &= dv\\
+		\sin(\theta) &= dw
+	\end{cases}
+\end{equation}
+Let's integrate these equations to find out how each of the uniformly generated coordinates relates to the spherical coordinates $(r, \phi, \theta)$. Let's start with $u$:
+\begin{align*}
+	\int du = u(r) &= \int \rho_{J}(r)r^2dr = \int \frac{\rho_0}{4\pi}\left(\frac{r}{r_0}\right)^{-2}\left(1+\frac{r}{r_0}\right)^{-2}r^2dr\\
+	&= \frac{\rho_0r_0^2}{4\pi}\int \left(1+\frac{r}{r_0}\right)^{-2} dr = \frac{\rho_0r_0^3}{4\pi}\int \zeta^{-2} d\zeta = -\frac{\rho_0r_0^3}{4\pi}\zeta^{-1}\\
+	&= -\frac{\rho_0r_0^3}{4\pi}\left(1+\frac{r}{r_0}\right)^{-1}
+\end{align*}
+where we made the substitution $\zeta = 1+\frac{r}{r_0} \implies dr = r_0 d\zeta$. For $v$ we find the trivial solution $v(r) = \phi$. And for $w$ we find $w(\theta) = -\cos(\theta)$. Thus we have found:
+\begin{equation}
+	\begin{cases}
+		u(r) &= -\frac{\rho_0r_0^3}{4\pi}\left(1+\frac{r}{r_0}\right)^{-1}\\
+		v(\phi) &= \phi\\
+		w(\theta) &= -\cos(\theta)
+	\end{cases}
+\end{equation}
+For practical purposes we want to know the inverses of these equations. We find:
+\begin{equation}
+	\begin{cases}
+		r(u) &= -r_0\left(1+\frac{\rho_0r_0^3}{4\pi u}\right)\\
+		\phi(v) &= v\\
+		\theta(w) &= \arccos(-w)
+	\end{cases}
+\end{equation}
+The next step is to find ranges from which $(u, v, w)$ need to be uniformly drawn. Finding the ranges for $v$ and $w$ is trivial. We note that $\phi\in[0, 2\pi] \implies v\in[0, 2\pi]$ and that $\theta\in[0, \pi] \implies w\in[-1, 1]$. Finding a good range for $u$ is harder as $r$ can generally go to infinity. The best we can do is define an $r_{max}$ corresponding to the maximum radius up to which we want to generate celestial bodies then $r\in[0, r_{max}] \implies u\in\left[-\frac{\rho_0 r_0^3}{4\pi}, -\frac{\rho_0 r_0^3}{4\pi}\left(1+\frac{r_{max}}{r_0}\right)^{-1}\right]$ or alternatively $u\in\left[-\frac{M_{tot}}{4\pi}, -\frac{M_{tot}}{4\pi}\left(1+\frac{r_{max}}{r_0}\right)^{-1}\right]$. One can show that to confine 95\% of the total mass of the galaxy we need $r_{max} = 19r_0$. This is the value for $r_{max}$ we will use in our simulation.\newline %use: r_{max} = f/(1-f)r_0 (where f is the fraction of the total mass confined)
+Once having obtained $N$ celestial bodies with Spherical coordinates $(r, \phi, \theta)$ we convert these coordinates to Cartesian coordinates $(x, y, z)$. For these we use the familiar transformations:
+\begin{equation}
+	\begin{cases}
+		x &= r\cos(\phi)\sin(\theta)\\
+		y &= r\sin(\phi)\sin(\theta)\\
+		z &= r\cos(\theta)
+	\end{cases}
+\end{equation}
+\subsection{Velocities and the Jaffe profile}
+Now that we have developed a method to randomly generate $N$ celestial bodies we want to develop a method to randomly generate the velocity vector for each of these bodies. This process is complicated by the requirement that the galaxy needs to be somewhat stable. To ensure that the Galaxy doesn't fly apart the magnitude of the velocity vector of a body should not exceed the local escape velocity of the Galaxy.\\
+For large $N$ the escape velocity at position $r$ can be approximated by using the gravitational potential corresponding to the Jaffe profile. The escape velocity is given by:
+\begin{equation*}
+	\frac{1}{2}v_e^2 = -\Phi_{J}(r) \implies \boxed{v_e = \sqrt{-2\Phi_{J}(r)}}
+\end{equation*}
+Since the density given by the Jaffe profile blows up at $r=0$ we need to define the minimum radial distance ($r_{min}$) at which celestial bodies are found. This will come in handy when computing the gravitational potential to prevent it from blowing up. The gravitational potential can be computed by solving the Poisson equation:
+\begin{equation*}
+	\nabla^2\Phi_{J} = 4\pi G\rho_{J}(r)
+\end{equation*}
+noticing that $\rho_{J}(r)$ is spherically symmetric so should $\Phi_{J}$ be. Therefore, $\Phi_J = \Phi_J(r)$. Thus the Poisson equation reads:
+\begin{equation*}
+	\frac{1}{r^2}\frac{\partial}{\partial r}\left(r^2\frac{\partial\Phi_{J}(r)}{\partial r}\right) = G\rho_0\left(\frac{r}{r_0}\right)^{-2}\left(1+\frac{r}{r_0}\right)^{-2}
+\end{equation*}
+We can solve this through double integration from $r_{min}$ to $r$. This yields:
+\begin{align*}
+	r^2\frac{\partial\Phi_{J}(r)}{\partial r} &= \int\limits_{r_{min}}^{r}G\rho_0r_0^{2}\left(1+\frac{r'}{r_0}\right)^{-2}dr' = -G\rho_0r_0^{3}\left.\left(1+\frac{r'}{r_0}\right)^{-1}\right|_{r_{min}}^{r}\\
+	&= G\rho_0r_0^{3}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - \left(1+\frac{r}{r_0}\right)^{-1}\right\}\\
+	\implies \Phi_J(r) &= G\rho_0r_0\int\limits_{r_{min}}^{r}\left(\frac{r'}{r_0}\right)^{-2}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - \left(1+\frac{r'}{r_0}\right)^{-1}\right\}dr'\\
+	&= G\rho_0r_0^2\int\limits_{x_{min}}^{x}x'^{-2}\left\{\left(1+x_{min}\right)^{-1} - \left(1+x'\right)^{-1}\right\}dx'\\
+	&= -\frac{GM_{tot}}{r_0}\left.\left(\frac{\left(1+x_{min}\right)^{-1}+x'\ln(1+x')-1}{x'}-\ln(x')\right)\right|_{x_{min}}^{x}\\
+	&= -\frac{GM_{tot}}{r}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\}-\frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r}{r_0}\right)-\ln\left(\frac{r}{r_0}\right)\right\}\\
+	& + \frac{GM_{tot}}{r_{min}}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\} + \frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r_{min}}{r_0}\right)-\ln\left(\frac{r_{min}}{r_0}\right)\right\}
+\end{align*}
+Thus the expression for the Jaffe potential is:
+\begin{align}
+	\Phi_J(r) &= -\frac{GM_{tot}}{r}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\}-\frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r}{r_0}\right)-\ln\left(\frac{r}{r_0}\right)\right\}\nonumber\\
+	& + \frac{GM_{tot}}{r_{min}}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\} + \frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r_{min}}{r_0}\right)-\ln\left(\frac{r_{min}}{r_0}\right)\right\}
+\end{align}
+\end{document}

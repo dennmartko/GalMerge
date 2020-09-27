@@ -11,3 +11,5 @@ class Constant(float):
 # Physical constants
 Msol = Constant(1.9891 * 10 ** (30), "kg", "Solar mass in kg")
 G = Constant(6.67430 * 10 ** (-11), "m3 kg-1 s-2", "Gravitational constant (G)")
+kpc2m = Constant(3.08567758*10**19, "m kpc-1", "Conversion factor for kpc to m")
+m2kpc = Constant(1/kpc2m, "kpc m-1", "Conversion factor for m to kpc")
