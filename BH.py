@@ -59,7 +59,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 
 def Tree(node, particles):
-	obj.append(node) # append the created node
+	#obj.append(node) # append the created node
 
 	# Hard copy the particle array
 	particles1 = particles.copy()
@@ -150,7 +150,7 @@ def Tree(node, particles):
 # Functions for computing the gravitational force on a single particle
 def BHF(node, rp, force_arr, θ=0.5):
 	daughters = node.daughters
-	
+
 	if BHF_handler(rp, node.R_CM, node.L,θ):
 		force_arr.append(GForce(node.M, rp, node.R_CM))
 	else:
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 	time_arr2 = []
 
 	for i in range(5):
-		Nparticles = 100000
+		Nparticles = 100
 	
 		x = 20 * np.random.random(size=Nparticles) - 10
 		y = 20 * np.random.random(size=Nparticles) - 10
@@ -293,7 +293,7 @@ if __name__ == "__main__":
 		print(Forces)
 
 		#PLOT CELLS
-		#CellPlotter(obj, particles)
+		CellPlotter(obj, particles)
 	
 	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
 	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
