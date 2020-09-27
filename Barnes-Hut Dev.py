@@ -177,7 +177,7 @@ def CellPlotter(cells, particles):
 
 
 if __name__ == "__main__":
-    Nparticles = 100
+    Nparticles = 100000
 
     x = 20 * np.random.random(size=Nparticles) - 10
     y = 20 * np.random.random(size=Nparticles) - 10
