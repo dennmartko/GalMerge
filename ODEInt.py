@@ -1,10 +1,9 @@
 import numpy as np
+from tqdm import tqdm, tqdm_gui
+from numba import jit,njit
 
-v_async = None
-rout = None
-vout = None
-
-def leapfrog(r, F, v=None, dt=0.001, init=False):
+@njit
+def leapfrog(r, F, v, SDR, SDV, dt=0.001, init=False, store="no"):
     #v is necessary for initialization after that it's not needed as the
     #function stores v_async in between calls
     if v is None and init:
@@ -12,59 +11,38 @@ def leapfrog(r, F, v=None, dt=0.001, init=False):
 
     #if init is true kickstart the leapfrog algorithm
     if init:
-        global v_async
-        v_async = v - dt / 2 * F #compute asynchronized velocities to kickstart the integrator (Euler method is
-                                 #used for this)
-
-        #store the initial values of r and v
-        global rout
-        global vout
-        rout = np.array([r])
-        vout = np.array([v])
-
-    #update r and v_async using leapfrog
-    v_async = v_async + dt * F
-    r = r + dt * v_async
-    
-    v = v_async + dt / 2 * F #resynchronize v for storage
+        vnew = v + dt / 2 * F
+        return r, vnew, SDR, SDV
+                                
+    rnew = np.empty_like(r)
+    vnew = np.empty_like(v)
+    rnew = r + dt * v
+    vnew = v + dt * F 
+    vstore = vnew - dt / 2 * F
 
     #store r and v
-    rout = np.append(rout, r)
-    vout = np.append(vout, v)
+    if store == 'yes':
+        SDR = np.append(SDR, rnew, axis=0)
+        SDV = np.append(SDV, vstore, axis=0)
+    return rnew, vnew, SDR, SDV
 
-    return r, v
-
-
-"""
-class leapfrog:
-    def __init__(self, r, v, F, dt=0.001):
-        self.r = r
-        self.v = v
-        self.v_async = self.v - dt/2*F #compute asynchronized velocities to kickstart the integrator
-
-        self.dt  = dt #set timestep
-
-        #storage arrays
-        self.rout = np.array([r])
-        self.vout = np.array([v])
-
-    def __call__(self, F):
-        self.v_async = self.v_async + self.dt*F
-        self.r = self.r + self.dt*self.v_async
-
-        #store in output arrays (to do! make a check to see if we have a large enough block for storage to file)
-        self.rout = np.append(self.rout, self.r)
-        self.vout = np.append(self.vout, self.v_async + self.dt/2*F)
-
-        return self.r
-"""
 
 if __name__ == "__main__":
-    r = np.arange(1,10,1).reshape(3,3)
-    v = np.arange(1,10,1).reshape(3,3)
-    F = np.arange(1,10,1).reshape(3,3)
+    SDV = np.empty((0,2))
+    SDR = np.empty((0,2))
 
-    r, v = leapfrog(r, F, v=v, dt=0.001, init=True)
-    print(r, v)
-    r, v = leapfrog(r, F, dt=0.001)
-    print(r, v)
+    size = 100000 * 2
+    r = np.linspace(1,10,size).reshape(int(size / 2),2)
+    v = np.linspace(1,10,size).reshape(int(size / 2),2)
+    F = np.linspace(1,10,size).reshape(int(size / 2),2)
+
+    # Check if we can put this under jit as well.
+    for i in tqdm(range(1000)):
+        if i == 0:
+            r, v, SDR, SDV = leapfrog(r, F, v, SDV,SDR, dt=0.01, init=True)
+        else:
+            if i % 10 == 0:
+                r, v, SDR, SDV = leapfrog(r, F, v, SDV, SDR, dt=0.01, store='yes')
+            else:
+                r, v, SDR, SDV = leapfrog(r, F, v, SDV, SDR, dt=0.01)
+    print(SDR, SDV)

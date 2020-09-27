@@ -107,8 +107,6 @@ if __name__ == "__main__":
 		time_arr2.append(duration)
 		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
 
-		print(Forces)
-
 		#PLOT CELLS
 		#CellPlotter(obj, particles)
 	
