@@ -4,30 +4,43 @@ import time
 import sys
 from multiprocessing import Process, Pipe, cpu_count, Array
 from ctypes import c_double
+from tqdm import tqdm
 
 #own imports
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
+from ODEInt import leapfrog
+
+def particles2arr(particles):
+	r = np.array([p.r for p in particles])
+	v = np.array([p.v for p in particles])
+	return r,v
+
+def updateparticles(r,v, particles):
+	for indx,p in enumerate(particles):
+		p.r = r[indx]
+		p.v = v[indx]
+	return particles
 
 if __name__ == "__main__":
 	time_arr1 = []
 	time_arr2 = []
 
-	for i in range(5):
-		Nparticles = 100000
+	Nparticles = 100000
 	
-		x = 20 * np.random.random(size=Nparticles) - 10
-		y = 20 * np.random.random(size=Nparticles) - 10
-		vx = 200 * np.random.random(size=Nparticles)
-		vy = 200 * np.random.random(size=Nparticles)
+	x = 20 * np.random.random(size=Nparticles) - 10
+	y = 20 * np.random.random(size=Nparticles) - 10
+	vx = 200 * np.random.random(size=Nparticles)
+	vy = 200 * np.random.random(size=Nparticles)
 
-		r = np.array([x, y])
-		v = np.array([vx, vy])
+	r = np.array([x, y])
+	v = np.array([vx, vy])
 
-		particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
+	particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
 
-		obj = []
-		L = 20
-
+	obj = []
+	L = 20
+	frames = 20
+	for frame in tqdm(range(frames)):
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
 		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
@@ -37,16 +50,7 @@ if __name__ == "__main__":
 		ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
 		#BUILD TREE
-		start = time.time()
 		Tree(ROOT, particles)
-		end = time.time()
-
-		print("\nTOTAL AMOUNT OF CELLS: ",len(obj))
-
-		duration = end - start
-		time_arr1.append(duration)
-		print("TOTAL TREE BUILDING TIME TAKEN FOR ",len(particles), " PARTICLES IS: ",duration, " SECONDS!")
-
 		
 		################################################
 		##    COMPUTE FORCES USING MULTIPROCESSING    ##
@@ -57,8 +61,6 @@ if __name__ == "__main__":
 		#NN defines the slice ranges for the particle array.
 		#We want to split the particles array in N_CPU-1 parts, i.e. the number of feasible subprocesses on this machine.
 		NN = int(Nparticles / (N_CPU - 1))
-
-		start = time.time()
 
 		#If the platform is 'win32' we will use pipes. The parent connector will be stored in the connections list.
 		if PLATFORM == 'win32':
@@ -102,13 +104,19 @@ if __name__ == "__main__":
 		#join and terminate all processes
 		processes_joinAndTerminate(processes)
 
-		end = time.time()
-		duration = end - start
-		time_arr2.append(duration)
-		print(f"TOTAL TIME TAKEN FOR COMPUTING THE FORCES: {duration} SECONDS!")
+		SDV = np.empty((0,2))
+		SDR = np.empty((0,2))
 
-		#PLOT CELLS
-		#CellPlotter(obj, particles)
-	
-	print("mean time taken for tree building: ",np.mean(time_arr1[1:]), "s")
-	print("mean time taken for force calculation: ",np.mean(time_arr2[1:]), "s")
+		r,v = particles2arr(particles)
+
+		if frame == 0:
+			r, v, SDR, SDV = leapfrog(r, Forces, v, SDV,SDR, dt=0.001, init=True)
+		else:
+			if frame % 5 == 0:
+				r, v, SDR, SDV = leapfrog(r, Forces, v, SDV, SDR, dt=0.001, store='yes')
+			else:
+				r, v, SDR, SDV = leapfrog(r, Forces, v, SDV, SDR, dt=0.001)
+
+		particles = updateparticles(r,v, particles)
+		print(r)
+	print(SDR, SDV)
