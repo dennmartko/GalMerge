@@ -1,14 +1,17 @@
 ﻿import numpy as np
 import time
-
+import os
 import sys
+
 from multiprocessing import Process, Pipe, cpu_count, Array
 from ctypes import c_double
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 #own imports
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
 from ODEInt import leapfrog
+from Animator import AnimateOrbit
 
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
@@ -21,26 +24,38 @@ def updateparticles(r,v, particles):
 		p.v = v[indx]
 	return particles
 
+def GetSituation(r,colors):
+	plt.figure(figsize=(10,10))
+	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors)
+	plt.grid()
+	plt.ylim(-15,15)
+	plt.xlim(-15,15)
+	plt.show()
+
 if __name__ == "__main__":
 	time_arr1 = []
 	time_arr2 = []
 
-	Nparticles = 100000
+	Nparticles = 500
 	
-	x = 20 * np.random.random(size=Nparticles) - 10
-	y = 20 * np.random.random(size=Nparticles) - 10
-	vx = 200 * np.random.random(size=Nparticles)
-	vy = 200 * np.random.random(size=Nparticles)
+	x = 20 * (2*np.random.random(size=Nparticles) - 1)
+	y = 20 * (2*np.random.random(size=Nparticles) - 1)
+	vx = 20 * (2*np.random.random(size=Nparticles) - 1)
+	vy = 20 * (2*np.random.random(size=Nparticles) - 1)
 
 	r = np.array([x, y])
 	v = np.array([vx, vy])
 
 	particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
-
+	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
 	obj = []
-	L = 20
-	frames = 20
+	L = 40
+	frames = 500
+
+	SDV = [v]
+	SDR = [r]
 	for frame in tqdm(range(frames)):
+		#GetSituation(particles,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
 		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
@@ -104,19 +119,22 @@ if __name__ == "__main__":
 		#join and terminate all processes
 		processes_joinAndTerminate(processes)
 
-		SDV = np.empty((0,2))
-		SDR = np.empty((0,2))
-
 		r,v = particles2arr(particles)
 
 		if frame == 0:
-			r, v, SDR, SDV = leapfrog(r, Forces, v, SDV,SDR, dt=0.001, init=True)
+			r, v, dummy = leapfrog(r, Forces, v, dt=0.001, init=True)
 		else:
-			if frame % 5 == 0:
-				r, v, SDR, SDV = leapfrog(r, Forces, v, SDV, SDR, dt=0.001, store='yes')
+			if frame % 1 == 0:
+				r, v, vstore = leapfrog(r, Forces, v, dt=0.001)
+				SDR.append(r)
+				SDV.append(vstore)
 			else:
-				r, v, SDR, SDV = leapfrog(r, Forces, v, SDV, SDR, dt=0.001)
+				r, v, vstore = leapfrog(r,Forces, v, dt=0.001)
 
 		particles = updateparticles(r,v, particles)
-		print(r)
-	print(SDR, SDV)
+
+	print(SDR[1], SDV[1])
+	print(len(SDV))
+	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
+	np.savez(outfile,r=np.array(SDR))
+	AnimateOrbit(outfile, len(SDR))
