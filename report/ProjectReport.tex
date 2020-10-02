@@ -90,4 +90,15 @@ Thus the expression for the Jaffe potential is:
 	\Phi_J(r) &= -\frac{GM_{tot}}{r}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\}-\frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r}{r_0}\right)-\ln\left(\frac{r}{r_0}\right)\right\}\nonumber\\
 	& + \frac{GM_{tot}}{r_{min}}\left\{\left(1+\frac{r_{min}}{r_0}\right)^{-1} - 1\right\} + \frac{GM_{tot}}{r_0}\left\{\ln\left(1+\frac{r_{min}}{r_0}\right)-\ln\left(\frac{r_{min}}{r_0}\right)\right\}
 \end{align}
+Now that we have a way to check the escape velocity of the particle we can draw each component of the initial velocity vector for each particle from a Gaussian distribution centered around zero with the standard deviation being the dispersion measure ($\sigma_{disp}$). That is, the spread in the observed velocities of the celestial bodies.
+
+\subsection{Alternative method for finding local escape velocities}
+Alternatively we could use:
+\begin{equation*}
+	\Phi(r) = -\frac{GM(<r)}{r}
+\end{equation*} 
+assuming the system is spherically symmetric and $M(<r)$ is the total mass up to $r$. In that case:
+\begin{equation*}
+	v_e = \sqrt{\frac{2GM(<r)}{r}}
+\end{equation*}
 \end{document}
