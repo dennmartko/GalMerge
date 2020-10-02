@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
 from ODEInt import leapfrog
 from Animator import AnimateOrbit
+from GalGen import generate
 
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
@@ -33,24 +34,24 @@ def GetSituation(r,colors):
 	plt.show()
 
 if __name__ == "__main__":
-	time_arr1 = []
-	time_arr2 = []
-
-	Nparticles = 500
+	Nparticles = 1000
 	
-	x = 20 * (2*np.random.random(size=Nparticles) - 1)
-	y = 20 * (2*np.random.random(size=Nparticles) - 1)
-	vx = 20 * (2*np.random.random(size=Nparticles) - 1)
-	vy = 20 * (2*np.random.random(size=Nparticles) - 1)
+	r, v = generate(Nparticles)
+	r = r[:,:2]
+	v = v[:,:2]
+	#x = 20 * (2*np.random.random(size=Nparticles) - 1)
+	#y = 20 * (2*np.random.random(size=Nparticles) - 1)
+	#vx = 20 * (2*np.random.random(size=Nparticles) - 1)
+	#vy = 20 * (2*np.random.random(size=Nparticles) - 1)
 
-	r = np.array([x, y])
-	v = np.array([vx, vy])
+	#r = np.array([x, y])
+	#v = np.array([vx, vy])
 
-	particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
+	particles = [Particle(r[i], v[i]) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
-	obj = []
+
 	L = 40
-	frames = 500
+	frames = 10
 
 	SDV = [v]
 	SDR = [r]
@@ -136,5 +137,5 @@ if __name__ == "__main__":
 	print(SDR[1], SDV[1])
 	print(len(SDV))
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
-	np.savez(outfile,r=np.array(SDR))
+	np.savez(outfile,r=np.array(SDR, dtype=object))
 	AnimateOrbit(outfile, len(SDR))

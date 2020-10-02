@@ -26,7 +26,7 @@ def jaffe_transform(p, Mtot, r0):
     return p
 
 
-def generate_r(N, type="jaffe", Mtot=10**9*const.Msol, r0=14*const.kpc2m):
+def generate_r(N, type="jaffe", Mtot=10**9, r0=14):
     p = np.random.rand(N, 3)
     if type == "jaffe":
         p = jaffe_transform(p, Mtot=Mtot, r0=r0)
@@ -36,7 +36,7 @@ def generate_r(N, type="jaffe", Mtot=10**9*const.Msol, r0=14*const.kpc2m):
 def generate_v(N, mag_r, Mtot, disp):
     def ve(M, r):
         if M > 0:
-            return np.sqrt(2*const.G*M/r)
+            return np.sqrt(2*const.Galt*M/r)
         else:
             return 0
 
@@ -46,19 +46,21 @@ def generate_v(N, mag_r, Mtot, disp):
 
     v = np.random.normal(loc=0, scale=disp, size=(N,3))
     for i in range(N):
-        if np.linalg.norm(v[i]) > vesc[i] and vesc[i] != 0:
+        if np.linalg.norm(v[i]) > vesc[i] and i != 0:
             tryagain = True
             while tryagain:
                 vtmp = np.random.normal(loc=0, scale=disp, size=3)
                 if np.linalg.norm(vtmp) <= vesc[i]:
                     v[i] = vtmp
                     tryagain = False
+        elif i == 0:
+            v[i] = np.zeros(3)
 
     return v
 
 
 
-def generate(N, Mtot=10**9*const.Msol, r0=14*const.kpc2m, disp=300):
+def generate(N, Mtot=10**9, r0=14, disp=8000*const.m2kpc*const.s2Gyr):
     # N: number of particles to generate
     r = generate_r(N, type="jaffe", Mtot=Mtot, r0=r0)
     mag_r = np.linalg.norm(r, axis=1) #size of r
@@ -106,6 +108,9 @@ def GeneratorPlot(p, type="spatial", histograms=False):
         plt.show()
 
 if __name__ == "__main__":
-    r, v = generate(100000)
-    GeneratorPlot(r*const.m2kpc, type="spatial", histograms=True)
-    GeneratorPlot(v*10**(-3), type="velocity")
+    r, v = generate(1000)
+    mag_v = np.linalg.norm(v*1e-3, axis=1)
+    plt.scatter(range(100),mag_v[::10])
+    plt.show()
+    #GeneratorPlot(r*const.m2kpc, type="spatial", histograms=True)
+    #GeneratorPlot(v*10**(-3), type="velocity")
