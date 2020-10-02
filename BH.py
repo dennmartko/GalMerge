@@ -30,7 +30,7 @@ class Cell(object):
 #Prototype of a particle object
 class Particle(object):
 	__slots__ = ('r', 'v', 'm')
-	def __init__(self, r, v, m=None):
+	def __init__(self, r, v, m=1):
 		# Position, velocity and mass
 		self.r = r
 		self.v = v
