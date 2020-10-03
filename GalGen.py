@@ -8,7 +8,7 @@ import constants as const
 # module for randomly generating galaxies
 
 def jaffe_transform(p, Mtot, r0):
-    rmax = 99*r0 #99% #19 * r0 #95% of the total mass of the galaxy is confined within this region
+    rmax = 19*r0 #99% #19 * r0 #95% of the total mass of the galaxy is confined within this region
     p[:,0] = Mtot / (4 * np.pi) * (1 - (1 + rmax / r0) ** (-1)) * p[:,0] - Mtot / (4 * np.pi) #rescale to u
     p[:,1] = 2 * np.pi * p[:,1] #rescale to v = phi
     p[:,2] = 2 * p[:,2] - 1 #rescale to w

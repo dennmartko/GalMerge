@@ -46,7 +46,7 @@ def get_condr(r, L, midR):
 @njit(fastmath=True)
 def GForce(M, rp, Rcm):
 	r = rp - Rcm
-	Fg = (const.Galt * M) / (r[0] ** 2 + r[1] ** 2) ** (3 / 2) * (r)
+	Fg = -(const.Galt * M) / (r[0] ** 2 + r[1] ** 2) ** (3 / 2) * (r)
 	return Fg
 
 @njit(fastmath=True)

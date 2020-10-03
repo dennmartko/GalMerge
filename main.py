@@ -34,7 +34,7 @@ def GetSituation(r,colors):
 	plt.show()
 
 if __name__ == "__main__":
-	Nparticles = 1000
+	Nparticles = 10000
 	
 	r, v = generate(Nparticles)
 	r = r[:,:2]
@@ -50,8 +50,8 @@ if __name__ == "__main__":
 	particles = [Particle(r[i], v[i]) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
 
-	L = 40
-	frames = 10
+	L = 2*np.linalg.norm(r[-1])
+	frames = 500
 
 	SDV = [v]
 	SDR = [r]
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 		if frame == 0:
 			r, v, dummy = leapfrog(r, Forces, v, dt=0.001, init=True)
 		else:
-			if frame % 1 == 0:
+			if frame % 5 == 0:
 				r, v, vstore = leapfrog(r, Forces, v, dt=0.001)
 				SDR.append(r)
 				SDV.append(vstore)
