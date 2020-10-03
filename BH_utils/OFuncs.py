@@ -1,6 +1,6 @@
 import numpy as np
 from numba import jit,njit
-
+import time
 #imports from own modules
 import constants as const
 
@@ -46,7 +46,7 @@ def get_condr(r, L, midR):
 @njit(fastmath=True)
 def GForce(M, rp, Rcm):
 	r = rp - Rcm
-	Fg = -1*(const.G_ * M) / (r[0] ** 2 + r[1] ** 2) ** (3 / 2) * (r)
+	Fg = -1*(const.G_ * M)*r / np.linalg.norm(r)**3
 	return Fg
 
 @njit(fastmath=True)

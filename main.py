@@ -29,8 +29,8 @@ def GetSituation(r,colors):
 	plt.figure(figsize=(10,10))
 	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors,s=0.4)
 	plt.grid()
-	plt.ylim(-5,5)
-	plt.xlim(-5,5)
+	plt.ylim(-20,20)
+	plt.xlim(-20,20)
 	plt.show()
 
 if __name__ == "__main__":
@@ -50,12 +50,13 @@ if __name__ == "__main__":
 	particles = [Particle(r[i], v[i], m=(10**12)/Nparticles) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
 
-	L = 10#2*np.linalg.norm(r[-1])
+	L = 150 #2*np.linalg.norm(r[-1])
 	frames = 200
 
 	SDV = [v]
 	SDR = [r]
 	for frame in tqdm(range(frames)):
+		if frame == 2: print(r)
 		GetSituation(r,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
