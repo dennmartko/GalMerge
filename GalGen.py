@@ -28,7 +28,7 @@ def jaffe_transform(p, Mtot, r0):
 
 def plum_transform(p, Mtot, r0):
     rmax = 10 * r0 #10r0 covers a large region of the potential
-    p[:,0] = p[:,0] * rmax ** 3 * Mtot / (4 * r0 ** 3 * np.pi * (1 + rmax ** 2 / r0 ** 2) ** (3 / 2)) #rescale to u such that r= [0,10r0]
+    p[:,0] = p[:,0] * rmax ** 3 * Mtot / (4 * r0 ** 3 * np.pi * (1 + rmax ** 2 / r0 ** 2) ** (3 / 2)) #rescale to u such that r= [0,rmax]
     p[:,1] = 2 * np.pi * p[:,1] #rescale to v = phi
     p[:,2] = 2 * p[:,2] - 1 #rescale to w
 
@@ -45,7 +45,7 @@ def plum_transform(p, Mtot, r0):
     return p
 
 
-def generate_r(N,r0, type="jaffe", Mtot=10 ** 12):
+def generate_r(N, type="plummer", Mtot=10 ** 12, r0=14):
     p = np.random.rand(N, 3)
     if type == "jaffe":
         p = jaffe_transform(p, Mtot=Mtot, r0=r0)
@@ -80,16 +80,29 @@ def generate_v(N, mag_r, Mtot, disp, r0):
 
     return v
 
+def generate_v2D(N, r, mag_r, Mtot, r0):
+    def ve(r, r0):
+        return np.sqrt(2 * const.G_ * Mtot / np.sqrt(r ** 2 + r0 ** 2))
 
-def generate(N, Mtot=10 ** 12, r0=10, disp=10):
+    vesc = np.empty(N)
+    for i in range(N):
+        vesc[i] = ve(mag_r[i], r0) #compute the escape velocity for each particle
+
+    vx = -vesc*r[:,1]/np.sqrt(r[:,0]**2 + r[:,1]**2)
+    vy = vesc*r[:,0]/np.sqrt(r[:,0]**2 + r[:,1]**2)
+    return np.stack((vx,vy), axis=1)
+
+
+def generate(N, Mtot=10 ** 12, r0=14, disp=300):
     # N: number of particles to generate
-    r = generate_r(N,r0=r0, type="plummer", Mtot=Mtot)
+    r = generate_r(N, type="plummer", Mtot=Mtot, r0=r0)
     mag_r = np.linalg.norm(r, axis=1) #size of r
     indices = np.argsort(mag_r)
     r = r[indices,:] #sort r according to the size of each position vector
     mag_r = mag_r[indices] #sort the r size array
-    v = generate_v(N, mag_r, Mtot, disp,r0=r0) + np.array([40,150,0])
-    return r, v
+    #v = generate_v(N, mag_r, Mtot, disp, r0=r0) + np.array([10,50,0])
+    v2D = generate_v2D(N, r, mag_r, Mtot, r0)
+    return r[:,:2], v2D
 
 def GeneratorPlot(p, type="spatial", histograms=False):
     plt.style.use("dark_background")
@@ -130,8 +143,8 @@ def GeneratorPlot(p, type="spatial", histograms=False):
 
 if __name__ == "__main__":
     r, v = generate(1000)
-    mag_v = np.linalg.norm(v, axis=1)
-    plt.scatter(range(100),mag_v[::10])
-    plt.show()
-    GeneratorPlot(r , type="spatial", histograms=True)
-    GeneratorPlot(v , type="velocity")
+    #mag_v = np.linalg.norm(v, axis=1)
+    #plt.scatter(range(100),mag_v[::10])
+    #plt.show()
+    #GeneratorPlot(r , type="spatial", histograms=True)
+    #GeneratorPlot(v , type="velocity")

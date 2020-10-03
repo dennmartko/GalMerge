@@ -9,6 +9,7 @@ from ctypes import c_double
 import constants as const
 from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr, GForce, BHF_handler
 from BH_utils.PFuncs import CellPlotter
+from GalGen import generate
 
 
 #Prototype of a cell object
@@ -59,7 +60,7 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 
 
 def Tree(node, particles):
-	#obj.append(node) # append the created node
+	obj.append(node) # append the created node
 
 	# Hard copy the particle array
 	particles1 = particles.copy()
@@ -150,7 +151,7 @@ def Tree(node, particles):
 # Functions for computing the gravitational force on a single particle
 def BHF(node, rp, force_arr, θ=0.5):
 	daughters = node.daughters
-	print(daughters)
+	#print(daughters)
 
 	if BHF_handler(rp, node.R_CM, node.L,θ):
 		force_arr.append(GForce(node.M, rp, node.R_CM))
@@ -196,21 +197,24 @@ if __name__ == "__main__":
 	time_arr1 = []
 	time_arr2 = []
 
-	for i in range(5):
-		Nparticles = 100
+	for i in range(1):
+		Nparticles = 1000
 	
-		x = 20 * np.random.random(size=Nparticles) - 10
-		y = 20 * np.random.random(size=Nparticles) - 10
-		vx = 200 * np.random.random(size=Nparticles)
-		vy = 200 * np.random.random(size=Nparticles)
+		r, v = generate(Nparticles)
+		r = r[:,:2]
+		v = v[:,:2]
+		#x = 20 * (2*np.random.random(size=Nparticles) - 1)
+		#y = 20 * (2*np.random.random(size=Nparticles) - 1)
+		#vx = 20 * (2*np.random.random(size=Nparticles) - 1)
+		#vy = 20 * (2*np.random.random(size=Nparticles) - 1)
 
-		r = np.array([x, y])
-		v = np.array([vx, vy])
+		#r = np.array([x, y])
+		#v = np.array([vx, vy])
 
-		particles = [Particle(r[:,i], v[:,i]) for i in range(Nparticles)]
+		particles = [Particle(r[i], v[i]) for i in range(Nparticles)] #:,i
 
 		obj = []
-		L = 20
+		L = 2*np.linalg.norm(r[-1])
 
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
