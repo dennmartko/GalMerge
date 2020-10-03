@@ -66,7 +66,6 @@ def generate_v(N, mag_r, Mtot, disp, r0):
     vesc = np.empty(N)
     for i in range(N):
         vesc[i] = ve(i * Mtot / N, mag_r[i],r0) #compute the escape velocity for each particle
-        print(vesc[i])
     v = np.random.normal(loc=0, scale=disp, size=(N,3))
     for i in range(N):
         if np.linalg.norm(v[i]) > vesc[i] and i != 0:
@@ -132,7 +131,6 @@ def GeneratorPlot(p, type="spatial", histograms=False):
 
 if __name__ == "__main__":
     r, v = generate(1000)
-    print(r)
     mag_v = np.linalg.norm(v, axis=1)
     plt.scatter(range(100),mag_v[::10])
     plt.show()
