@@ -80,6 +80,18 @@ def generate_v(N, mag_r, Mtot, disp, r0):
 
     return v
 
+def generate_v2D(N, r, mag_r, Mtot, r0):
+    def ve(r, r0):
+        return np.sqrt(2 * const.G_ * Mtot / np.sqrt(r ** 2 + r0 ** 2))
+
+    vesc = np.empty(N)
+    for i in range(N):
+        vesc[i] = ve(mag_r[i], r0) #compute the escape velocity for each particle
+
+    vx = -vesc*r[:,1]/np.sqrt(r[:,0]**2 + r[:,1]**2)
+    vy = vesc*r[:,0]/np.sqrt(r[:,0]**2 + r[:,1]**2)
+    return np.stack((vx,vy), axis=1)
+
 
 def generate(N, Mtot=10 ** 12, r0=14, disp=300):
     # N: number of particles to generate
@@ -88,8 +100,9 @@ def generate(N, Mtot=10 ** 12, r0=14, disp=300):
     indices = np.argsort(mag_r)
     r = r[indices,:] #sort r according to the size of each position vector
     mag_r = mag_r[indices] #sort the r size array
-    v = generate_v(N, mag_r, Mtot, disp, r0=r0) + np.array([10,50,0])
-    return r, v
+    #v = generate_v(N, mag_r, Mtot, disp, r0=r0) + np.array([10,50,0])
+    v2D = generate_v2D(N, r, mag_r, Mtot, r0)
+    return r[:,:2], v2D
 
 def GeneratorPlot(p, type="spatial", histograms=False):
     plt.style.use("dark_background")
@@ -131,8 +144,8 @@ def GeneratorPlot(p, type="spatial", histograms=False):
 
 if __name__ == "__main__":
     r, v = generate(1000)
-    mag_v = np.linalg.norm(v, axis=1)
-    plt.scatter(range(100),mag_v[::10])
-    plt.show()
-    GeneratorPlot(r , type="spatial", histograms=True)
-    GeneratorPlot(v , type="velocity")
+    #mag_v = np.linalg.norm(v, axis=1)
+    #plt.scatter(range(100),mag_v[::10])
+    #plt.show()
+    #GeneratorPlot(r , type="spatial", histograms=True)
+    #GeneratorPlot(v , type="velocity")

@@ -34,11 +34,11 @@ def GetSituation(r,colors):
 	plt.show()
 
 if __name__ == "__main__":
-	Nparticles = 10000
+	Nparticles = 1000
 	
 	r, v = generate(Nparticles)
-	r = r[:,:2]
-	v = v[:,:2]
+	#r = r[:,:2]
+	#v = v[:,:2]
 	#x = 20 * (2*np.random.random(size=Nparticles) - 1)
 	#y = 20 * (2*np.random.random(size=Nparticles) - 1)
 	#vx = 20 * (2*np.random.random(size=Nparticles) - 1)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 	particles = [Particle(r[i], v[i], m=(10**12)/Nparticles) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
 
-	L = 150 #2*np.linalg.norm(r[-1])
+	L = 2*np.linalg.norm(r[-1])
 	frames = 200
 
 	SDV = [v]
