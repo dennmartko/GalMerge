@@ -81,15 +81,19 @@ def generate_v(N, mag_r, Mtot, disp, r0):
     return v
 
 def generate_v2D(N, r, mag_r, Mtot, r0):
-    def ve(r, r0):
-        return np.sqrt(2 * const.G_ * Mtot / np.sqrt(r ** 2 + r0 ** 2))
+    def ve(rr, r0):
+        return np.sqrt(2 * const.G_ * Mtot / r0) * (1 + (rr/r0)**2)**(-1/4)
+
+    #def ve(rr, r0):
+    #    return np.sqrt(2 * const.G_ * Mtot / np.sqrt(rr**2 + r0**2))
 
     vesc = np.empty(N)
     for i in range(N):
         vesc[i] = ve(mag_r[i], r0) #compute the escape velocity for each particle
+        #print(vesc[i])
 
-    vx = -vesc*r[:,1]/np.sqrt(r[:,0]**2 + r[:,1]**2)
-    vy = vesc*r[:,0]/np.sqrt(r[:,0]**2 + r[:,1]**2)
+    vx = -vesc * r[:,1] / np.sqrt(r[:,0] ** 2 + r[:,1] ** 2)
+    vy = vesc * r[:,0] / np.sqrt(r[:,0] ** 2 + r[:,1] ** 2)
     return np.stack((vx,vy), axis=1)
 
 

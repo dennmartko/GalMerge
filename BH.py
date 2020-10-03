@@ -165,7 +165,7 @@ def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ)
-		Fg = np.sum(np.array(force_arr) * p.m, axis=0)
+		Fg = np.sum(np.array(force_arr), axis=0) - const.G_*10 ** 12*p.r/((14)**2 + np.linalg.norm(p.r)**2)**(3/2)
 		Forces[i,:] = Fg.astype(dtype=c_double)
 
 	#send the updated Forces array back through the Pipe
