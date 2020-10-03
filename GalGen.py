@@ -105,7 +105,6 @@ def GeneratorPlot(p, type="spatial", histograms=False):
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
-    plt.show()
 
     if histograms and type == "spatial":
         fig = plt.figure(figsize=(10,10))
