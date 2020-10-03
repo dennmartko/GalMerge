@@ -27,10 +27,10 @@ def updateparticles(r,v, particles):
 
 def GetSituation(r,colors):
 	plt.figure(figsize=(10,10))
-	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors)
+	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors,s=0.4)
 	plt.grid()
-	plt.ylim(-15,15)
-	plt.xlim(-15,15)
+	plt.ylim(-5,5)
+	plt.xlim(-5,5)
 	plt.show()
 
 if __name__ == "__main__":
@@ -47,16 +47,16 @@ if __name__ == "__main__":
 	#r = np.array([x, y])
 	#v = np.array([vx, vy])
 
-	particles = [Particle(r[i], v[i]) for i in range(Nparticles)] #:,i
+	particles = [Particle(r[i], v[i], m=(10**12)/Nparticles) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
 
-	L = 2*np.linalg.norm(r[-1])
-	frames = 500
+	L = 10#2*np.linalg.norm(r[-1])
+	frames = 200
 
 	SDV = [v]
 	SDR = [r]
 	for frame in tqdm(range(frames)):
-		#GetSituation(particles,colors)
+		GetSituation(r,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
 		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
@@ -94,22 +94,22 @@ if __name__ == "__main__":
 			if i == N_CPU - 2:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=0.6, conn=child_conn)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i*NN:]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i*NN:], θ=0.5)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i*NN:], θ=0.6)) #spawn process
 					p.start() #start process
 			else:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.5, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.6, conn=child_conn)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=0.5)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=0.6)) #spawn process
 					p.start() #start process
 			processes.append(p)
 
@@ -123,19 +123,17 @@ if __name__ == "__main__":
 		r,v = particles2arr(particles)
 
 		if frame == 0:
-			r, v, dummy = leapfrog(r, Forces, v, dt=0.001, init=True)
+			r, v, dummy = leapfrog(r, Forces, v, dt=0.005, init=True)
 		else:
-			if frame % 5 == 0:
-				r, v, vstore = leapfrog(r, Forces, v, dt=0.001)
+			if frame % 2 == 0:
+				r, v, vstore = leapfrog(r, Forces, v, dt=0.005)
 				SDR.append(r)
 				SDV.append(vstore)
 			else:
-				r, v, vstore = leapfrog(r,Forces, v, dt=0.001)
+				r, v, vstore = leapfrog(r,Forces, v, dt=0.005)
 
 		particles = updateparticles(r,v, particles)
 
-	print(SDR[1], SDV[1])
-	print(len(SDV))
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
 	AnimateOrbit(outfile, len(SDR))

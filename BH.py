@@ -30,13 +30,13 @@ class Cell(object):
 #Prototype of a particle object
 class Particle(object):
 	__slots__ = ('r', 'v', 'm')
-	def __init__(self, r, v, m=1):
+	def __init__(self, r, v, m=None):
 		# Position, velocity and mass
 		self.r = r
 		self.v = v
 
 		if m is None:
-			self.m = 2 *10**6 #1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 1 #1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
