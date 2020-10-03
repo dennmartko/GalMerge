@@ -29,7 +29,7 @@ def jaffe_transform(p, Mtot, r0):
 def plum_transform(p, Mtot, r0):
     rmax = 10 * r0 #99% #19 * r0 #95% of the total mass of the galaxy is confined within this
                    #region
-    p[:,0] = p[:,0] * rmax ** 3 * Mtot / (4 * r0 ** 3 * np.pi * (1 + rmax ** 2 / r0 ** 2) ** (3 / 2)) #rescale to u such that r= [0,10r0]
+    p[:,0] = p[:,0] * rmax ** 3 * Mtot / (4 * r0 ** 3 * np.pi * (1 + rmax ** 2 / r0 ** 2) ** (3 / 2)) #rescale to u such that r= [0,rmax]
     p[:,1] = 2 * np.pi * p[:,1] #rescale to v = phi
     p[:,2] = 2 * p[:,2] - 1 #rescale to w
 
@@ -46,12 +46,12 @@ def plum_transform(p, Mtot, r0):
     return p
 
 
-def generate_r(N, type="jaffe", Mtot=10 ** 12, r0=14):
+def generate_r(N, type="plummer", Mtot=10 ** 12, r0=14):
     p = np.random.rand(N, 3)
     if type == "jaffe":
         p = jaffe_transform(p, Mtot=Mtot, r0=r0)
     if type == "plummer":
-        p = plum_transform(p, Mtot=Mtot, r0=0.3)
+        p = plum_transform(p, Mtot=Mtot, r0=r0)
     return p
     
 
@@ -66,6 +66,7 @@ def generate_v(N, mag_r, Mtot, disp, r0):
     vesc = np.empty(N)
     for i in range(N):
         vesc[i] = ve(i * Mtot / N, mag_r[i],r0) #compute the escape velocity for each particle
+
     v = np.random.normal(loc=0, scale=disp, size=(N,3))
     for i in range(N):
         if np.linalg.norm(v[i]) > vesc[i] and i != 0:
@@ -81,14 +82,14 @@ def generate_v(N, mag_r, Mtot, disp, r0):
     return v
 
 
-def generate(N, Mtot=10 ** 12, r0=0.3, disp=300):
+def generate(N, Mtot=10 ** 12, r0=14, disp=300):
     # N: number of particles to generate
     r = generate_r(N, type="plummer", Mtot=Mtot, r0=r0)
     mag_r = np.linalg.norm(r, axis=1) #size of r
     indices = np.argsort(mag_r)
     r = r[indices,:] #sort r according to the size of each position vector
     mag_r = mag_r[indices] #sort the r size array
-    v = generate_v(N, mag_r, Mtot, disp,r0=r0) + np.array([10,50,0])
+    v = generate_v(N, mag_r, Mtot, disp, r0=r0) + np.array([10,50,0])
     return r, v
 
 def GeneratorPlot(p, type="spatial", histograms=False):

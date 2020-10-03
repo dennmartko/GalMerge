@@ -11,8 +11,8 @@ class Constant(float):
 # Physical constants
 Msol = Constant(1.9891 * 10 ** (30), "kg", "Solar mass in kg")
 G = Constant(6.67430 * 10 ** (-11), "m3 kg-1 s-2", "Gravitational constant (G)")
-Galt = Constant(4.49376*10**(-6), "kpc3 Msol-1 Gyr-2", "Alternative gravitational constant (G)")
+#Galt = Constant(4.49376*10**(-6), "kpc3 Msol-1 Gyr-2", "Alternative gravitational constant (G)")
 kpc2m = Constant(3.08567758*10**19, "m kpc-1", "Conversion factor for kpc to m")
 m2kpc = Constant(1/kpc2m, "kpc m-1", "Conversion factor for m to kpc")
 s2Gyr = Constant(60*60*365*10**9, "Gyr s-1", "Conversion factor for s to Gyr")
-G_ = Constant(4.49376*10**(-6), "kpc3Msol−1 Gyr−2", "Conversion to correct units G")
+G_ = Constant(4.49376*10**(-6), "kpc3 Msol−1 Gyr−2", "Conversion to correct units G")
