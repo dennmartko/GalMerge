@@ -14,6 +14,11 @@ from ODEInt import leapfrog
 from Animator import AnimateOrbit
 from GalGen import generate
 
+from PyQt5 import QtWidgets
+
+import sys
+
+
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
 	v = np.array([p.v for p in particles])
@@ -32,6 +37,7 @@ def GetSituation(r,colors):
 	plt.ylim(-400,400)
 	plt.xlim(-400,400)
 	plt.show()
+
 
 if __name__ == "__main__":
 	'''
