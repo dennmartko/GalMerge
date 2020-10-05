@@ -14,10 +14,6 @@ from ODEInt import leapfrog
 from Animator import AnimateOrbit
 from GalGen import generate
 
-from PyQt5 import QtWidgets
-
-import sys
-
 
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
@@ -142,7 +138,7 @@ if __name__ == "__main__":
 
 		r,v = particles2arr(particles)
 
-		if frame == 0: 
+		if frame == 0:
 			r, v, dummy = leapfrog(r, Forces, v, dt=dt, init=True)
 		else:
 			if frame % 2 == 0:

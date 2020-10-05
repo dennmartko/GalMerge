@@ -32,7 +32,7 @@ def plum_transform(p, Mtot, r0):
     p[:,1] = 2 * np.pi * p[:,1] #rescale to v = phi
     p[:,2] = 2 * p[:,2] - 1 #rescale to w
 
-    p[:,0] = np.sqrt((4 * r0 ** 3 * np.pi * p[:,0]) ** (2 / 3) / (Mtot ** (2 / 3) - (4 * r0 ** 3 * np.pi * p[:,0]) ** (2 / 3) / (r0 ** 2))) + r0#transform u to r
+    p[:,0] = np.sqrt((4 * r0 ** 3 * np.pi * p[:,0]) ** (2 / 3) / (Mtot ** (2 / 3) - (4 * r0 ** 3 * np.pi * p[:,0]) ** (2 / 3) / (r0 ** 2))) + r0 #transform u to r
     p[:,2] = np.arccos(-p[:,2]) #transform w to theta
 
     #convert to cartesian coordinates
@@ -85,7 +85,7 @@ def generate_v2D(N, r, mag_r, Mtot, r0):
         return np.sqrt(2 * const.G_ * Mtot / r0) * (1 + (rr / r0) ** 2) ** (-1 / 4)
 
     #def ve(rr, r0):
-    #    return np.sqrt(2 * const.G_ * Mtot / np.sqrt(rr**2 + r0**2))
+    #    return np.sqrt(2 * const.G_ * Mtot / np.sqrt(rr ** 2 + r0 ** 2))
 
     vesc = np.empty(N)
     for i in range(N):
@@ -100,8 +100,8 @@ def generate_v2D(N, r, mag_r, Mtot, r0):
 def generate(N, Mtot, r0, disp):
     # N: number of particles to generate
     r = generate_r(N, Mtot=Mtot, r0=r0, type="plummer")
-    mag_r = np.linalg.norm(r, axis=1) 
-    indices = np.argsort(mag_r) 
+    mag_r = np.linalg.norm(r, axis=1)
+    indices = np.argsort(mag_r)
     r = r[indices,:] #sort r according to the size of each position vector
     mag_r = mag_r[indices] #sort the r size array
     #v = generate_v(N, mag_r, Mtot, disp, r0=r0) + np.array([10,50,0])

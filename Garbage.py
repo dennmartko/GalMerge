@@ -37,7 +37,7 @@ class Particle:
 		self.v = v
 
 		if m is None:
-			self.m = 2 #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 1 #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
