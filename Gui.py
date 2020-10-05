@@ -370,8 +370,7 @@ if __name__ == "__main__":
             SDV = [v] # Storage of Data for V
             SDR = [r] # Storage of Data for R
             for frame in tqdm(range(frames)):
-                percentage = int(frame/frames * 100)
-                self.progressBar.setValue(percentage)
+                self.progressBar.setValue(int(frame/frames * 100))
                 self.lcdNumber.setProperty("intValue", frame)
                 QtWidgets.QApplication.processEvents()
                 time.sleep(0.001) # MUST BE HERE BECAUSE OF GIL
