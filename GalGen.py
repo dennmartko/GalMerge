@@ -47,14 +47,14 @@ def gen3DPlummer(N, r0):
     return np.einsum('i,ij->ij', r, randUnitVec(N))
 
 # handler function for generating N random particle positions
-def generate_r(Npart, r0, Mtot=None, seed=None, type='plummer'):
-    if type == "plummer0":
+def generate_r(Npart, r0, Mtot=None, seed=None, type_='plummer'):
+    if type_ == "plummer0":
         if Mtot is None:
             print("Mtot must be defined!")
         p = np.random.rand(Npart, 3)
         p = plum_transform(p, Mtot, r0)
 
-    if type == "plummer":
+    if type_ == "plummer":
         p = gen3DPlummer(Npart, r0)
 
     return p
@@ -66,10 +66,10 @@ def vesc_Plummer(r, M, r0):
 def vcirc_Plummer(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Plummer(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
 
-def generate_v(r, M, r0, type="plummer"):
-    if type == "plummer":
+def generate_v(r, M, r0, type_="plummer"):
+    if type_ == "plummer":
         v = vcirc_Plummer(r, M, r0)
-    if type == "plummer2D":
+    if type_ == "plummer2D":
         #def ve(rr, r0):
         #    return np.sqrt(2 * const.G_ * Mtot / np.sqrt(rr ** 2 + r0 ** 2))
 
@@ -85,26 +85,26 @@ def generate_v(r, M, r0, type="plummer"):
 
 def generate(N, Mtot, r0, disp, type_="plummer"):
     # N: number of particles to generate
-    r = generate_r(N, r0=r0, Mtot=Mtot, type=type_)
-    v = generate_v(r, Mtot, r0, type=type_)
+    r = generate_r(N, r0=r0, Mtot=Mtot, type_=type_)
+    v = generate_v(r, Mtot, r0, type_=type_)
     return r, v
 
-def GeneratorPlot(p, type="spatial", histograms=False):
+def GeneratorPlot(p, type_="spatial", histograms=False):
     plt.style.use("dark_background")
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(p[:,0], p[:,1], p[:,2], s=1, color='white')
     
-    if type == "spatial":
+    if type_ == "spatial":
         ax.set(xlabel=r"$x$ (kpc)", ylabel=r"$y$ (kpc)", zlabel=r"$z$ (kpc)")
-    elif type == "velocity":
-        ax.set(xlabel=r"$v_x$ (kpc/gyr)", ylabel=r"$v_y$ (kpc/gyr)", zlabel=r"$v_z$ (kpc/gyr)")
+    elif type_ == "velocity":
+        ax.set(xlabel=r"$v_x$ (kpc/Gyr)", ylabel=r"$v_y$ (kpc/Gyr)", zlabel=r"$v_z$ (kpc/Gyr)")
 
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
 
-    if histograms and type == "spatial":
+    if histograms and type_ == "spatial":
         fig = plt.figure(figsize=(10,10))
 
         histSetup = dict(bins=p.shape[0] // 100, color="white", density=True)
@@ -124,7 +124,7 @@ def GeneratorPlot(p, type="spatial", histograms=False):
         ax3.hist(np.arctan2(np.linalg.norm(p[:,:-1], axis=1), p[:,2]), **histSetup)
         ax3.set(xlabel=r"$\theta$ (rad)")
 
-        plt.show()
+    plt.show()
 
 if __name__ == "__main__":
     Nparticles = 3000
@@ -139,5 +139,5 @@ if __name__ == "__main__":
     #mag_v = np.linalg.norm(v, axis=1)
     #plt.scatter(range(100),mag_v[::10])
     #plt.show()
-    #GeneratorPlot(r , type="spatial", histograms=True)
-    #GeneratorPlot(v , type="velocities")
+    GeneratorPlot(r , type_="spatial", histograms=True)
+    GeneratorPlot(v , type_="velocities")
