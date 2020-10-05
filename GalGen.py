@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     r, v = generate(Nparticles, Mtot, r0, disp)
     #mag_v = np.linalg.norm(v, axis=1)
-    #plt.scatter(range(100),mag_v[::10])
+    #plt.scatter(range(Nparticles//10),mag_v[::10])
     #plt.show()
     GeneratorPlot(r , type_="spatial", histograms=True)
-    GeneratorPlot(v , type_="velocities")
+    GeneratorPlot(v , type_="velocity")
