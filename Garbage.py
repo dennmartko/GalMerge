@@ -37,7 +37,7 @@ class Particle:
 		self.v = v
 
 		if m is None:
-			self.m = 1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 2 #const.Msol #give the particle the mass of the Sun if m is not provided
 		else:
 			self.m = m
 
@@ -149,7 +149,7 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
-def BHF(node, rp, force_arr, θ=0.5):
+def BHF(node, rp, force_arr, θ):
 	daughters = node.daughters
 	#print(daughters)
 

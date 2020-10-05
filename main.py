@@ -34,18 +34,36 @@ def GetSituation(r,colors):
 	plt.show()
 
 if __name__ == "__main__":
-	Nparticles = 10000
-	
-	r, v = generate(Nparticles)
+	'''
 
-	particles = [Particle(r[i], v[i], m=(10**12)/Nparticles) for i in range(Nparticles)] #:,i
-	colors = ['orange' if i== 10 else 'b' for i in range(Nparticles)]
+		1. Nparticles indicates the amount of particles in the simulation recommended is an amount between 1000 and 10000 = 1k-10k
+		2. The amount of frames for test runs to observe any flaws should be between 70 and 200 to obtain reasonable computing time. (within 5mins to 1h)
+		3. Theta indicates the BH performance or approximation. The higher θ, the faster the algorithm is but less accurate. Recommended is: θ=[0.5,0.8]
+		4. The algorithm typically follows the following idea: GENERATE GALAXY + INITIAL CONDITIONS -> START COMPUTING FRAMES <--> (BARNES HUT ALGORITHM -> INTEGRATOR); --> MOVIE
+		5. A mass of M = 1E9 to 1E12 is recommended.
+		6. The program automatically detects the maximumum number of possible cpu cores on your computer and will maximize its usage. WINDOWS, LINUX, and MAC OS are supported.
+		7. The potential used can be altered; Current options are: "plummer"
+		8. The recommended timestep dt, based on obtaining smooth orbits, is recommended to be smaller than 0.01 Gyrs.
+		9. r0 is directly related to the maximum radius of the galaxy and acts as a scaling radius.
+		10. Dispersion (disp) is the random motions of the stars relative to the "systemic" velocity.
 
-	L = 2*np.linalg.norm(r[-1])
-	frames = 200
+	'''
+	Nparticles = 1000
+	θ = 0.6 
+	dt = 0.005
+	Mtot = 10 ** 9
+	r0 = 20
+	frames = 500
+	disp = 1600
 
-	SDV = [v]
-	SDR = [r]
+	r, v = generate(Nparticles, Mtot, r0, disp)
+	L = 300#2 * np.linalg.norm(r[-1])
+
+	particles = [Particle(r[i], v[i], m=Mtot / Nparticles) for i in range(Nparticles)] #:,i
+	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
+
+	SDV = [v] # Storage of Data for V
+	SDR = [r] # Storage of Data for R
 	for frame in tqdm(range(frames)):
 		#GetSituation(r,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
@@ -66,41 +84,46 @@ if __name__ == "__main__":
 		PLATFORM = sys.platform #get the patform on which this script is running
 
 		#NN defines the slice ranges for the particle array.
-		#We want to split the particles array in N_CPU-1 parts, i.e. the number of feasible subprocesses on this machine.
+		#We want to split the particles array in N_CPU-1 parts, i.e.  the number of
+		#feasible subprocesses on this machine.
 		NN = int(Nparticles / (N_CPU - 1))
 
-		#If the platform is 'win32' we will use pipes. The parent connector will be stored in the connections list.
+		#If the platform is 'win32' we will use pipes.  The parent connector will be
+		#stored in the connections list.
 		if PLATFORM == 'win32':
 			connections = []
 		processes = [] #array with process instances
 
-		#create a multiprocessing array for the force on each particle in shared memory
-		mp_Forces = Array(c_double, 2*Nparticles)
-		#create a 2D numpy array sharing its memory location with the multiprocessing array
+		#create a multiprocessing array for the force on each particle in shared
+		#memory
+		mp_Forces = Array(c_double, 2 * Nparticles)
+		#create a 2D numpy array sharing its memory location with the multiprocessing
+		#array
 		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 2))
 
 		#spawn the processes
 		for i in range(N_CPU - 1):
-			#ensure that the last particle is also included when Nparticles / (N_CPU - 1) is not an integer
+			#ensure that the last particle is also included when Nparticles / (N_CPU -
+			#1) is not an integer
 			if i == N_CPU - 2:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=0.6, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Mtot, r0), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
 					p.start() #start process
-					parent_conn.send(Forces[i*NN:]) #send Forces array through Pipe
+					parent_conn.send(Forces[i * NN:]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i*NN:], θ=0.6)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Mtot, r0), kwargs=dict(Forces=Forces[i * NN:], θ=θ)) #spawn process
 					p.start() #start process
 			else:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=0.6, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Mtot, r0), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=0.6)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Mtot, r0), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ)) #spawn process
 					p.start() #start process
 			processes.append(p)
 
@@ -113,18 +136,17 @@ if __name__ == "__main__":
 
 		r,v = particles2arr(particles)
 
-		if frame == 0:
-			r, v, dummy = leapfrog(r, Forces, v, dt=0.005, init=True)
+		if frame == 0: 
+			r, v, dummy = leapfrog(r, Forces, v, dt=dt, init=True)
 		else:
-			if frame % 1 == 0:
-				r, v, vstore = leapfrog(r, Forces, v, dt=0.005)
+			if frame % 2 == 0:
+				r, v, vstore = leapfrog(r, Forces, v, dt=dt)
 				SDR.append(r)
 				SDV.append(vstore)
 			else:
-				r, v, vstore = leapfrog(r,Forces, v, dt=0.005)
+				r, v, vstore = leapfrog(r, Forces, v, dt=dt)
 
-		L = 2*np.linalg.norm(r[-1])
-		particles = updateparticles(r,v, particles)
+		particles = updateparticles(r, v, particles)
 
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))

@@ -46,7 +46,7 @@ def get_condr(r, L, midR):
 @njit(fastmath=True)
 def GForce(M, rp, Rcm):
 	r = rp - Rcm
-	Fg = -1*(const.G_ * M)*r / np.linalg.norm(r)**3
+	Fg = (const.G_ * M)*r / (np.linalg.norm(r)**2 + 0.1**2)**(3/2) # 0.1 is softening parameter
 	return Fg
 
 @njit(fastmath=True)

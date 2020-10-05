@@ -36,7 +36,8 @@ class Particle(object):
 		self.v = v
 
 		if m is None:
-			self.m = 1 #1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m is not provided
+			self.m = 1 #1.9891 * 10 ** (30) #const.Msol #give the particle the mass of the Sun if m
+              #is not provided
 		else:
 			self.m = m
 
@@ -148,24 +149,24 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
-def BHF(node, rp, force_arr, θ=0.5):
+def BHF(node, rp, force_arr, θ):
 	daughters = node.daughters
-
-	if BHF_handler(rp, node.R_CM, node.L,θ):
+	if BHF_handler(rp, node.R_CM, node.L, θ) or daughters == []:
 		force_arr.append(GForce(node.M, rp, node.R_CM))
 	else:
 		for i in range(len(daughters)):
 			BHF(daughters[i], rp, force_arr, θ)
 
-def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, conn=None):
-	#Forces will be None if the platform is 'win32'. In that case we should receive Forces through a duplex Pipe.
+def BHF_kickstart(ROOT, particles , Mtot, r0, Forces=None, θ=0.5, conn=None):
+	#Forces will be None if the platform is 'win32'.  In that case we should
+	#receive Forces through a duplex Pipe.
 	if Forces is None and conn is not None:
 		Forces = conn.recv() #waits until there's something to receive
 
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ)
-		Fg = np.sum(np.array(force_arr), axis=0) - const.G_*10 ** 12*p.r/((14)**2 + np.linalg.norm(p.r)**2)**(3/2)
+		Fg = -np.sum(np.array(force_arr), axis=0) -1* const.G_ * Mtot * p.r / ((r0) ** 2 + np.linalg.norm(p.r) ** 2) ** (3 / 2) 
 		Forces[i,:] = Fg.astype(dtype=c_double)
 
 	#send the updated Forces array back through the Pipe
