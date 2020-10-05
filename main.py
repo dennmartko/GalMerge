@@ -59,6 +59,7 @@ if __name__ == "__main__":
 	disp = 1600
 
 	r, v = generate(Nparticles, Mtot, r0, disp)
+	r = r[:,:2]; v = v[:,:2]
 	L = 300#2 * np.linalg.norm(r[-1])
 
 	particles = [Particle(r[i], v[i], m=Mtot / Nparticles) for i in range(Nparticles)] #:,i
@@ -67,7 +68,7 @@ if __name__ == "__main__":
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
 	for frame in tqdm(range(frames)):
-		#GetSituation(r,colors)
+		GetSituation(r,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
 		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
