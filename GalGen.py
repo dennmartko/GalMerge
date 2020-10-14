@@ -46,16 +46,35 @@ def gen3DPlummer(N, r0):
     r = r0 / np.sqrt(f ** (-2 / 3) - 1)
     return np.einsum('i,ij->ij', r, randUnitVec(N))
 
+#function to generate N random particle positions according to the Jaffe density profile
+def gen3DJaffe(N, r0):
+    f = np.random.rand(N) #fraction of mass M0 enclosed within r, f in [0, 1]
+    r = r0 * f / (1 - f)
+    return np.einsum('i,ij->ij', r, randUnitVec(N))
+
+#function to generate N random particle positions according to the Hernquist density profile
+def gen3DHernquist(N, r0):
+    f = np.random.rand(N) #fraction of mass M0 enclosed within r, f in [0, 1]
+    r = r0 * (f + np.sqrt(f)) / (1 - f)
+    return np.einsum('i,ij->ij', r, randUnitVec(N))
+
 # handler function for generating N random particle positions
 def generate_r(Npart, r0, Mtot=None, seed=None, type_='plummer'):
-    if type_ == "plummer0":
+    if type_ == "plummer2D":
         if Mtot is None:
             print("Mtot must be defined!")
         p = np.random.rand(Npart, 3)
         p = plum_transform(p, Mtot, r0)
+        p = p[:,:2]
 
     if type_ == "plummer":
         p = gen3DPlummer(Npart, r0)
+
+    if type_ == "jaffe":
+        p = gen3DJaffe(Npart, r0)
+
+    if type_ == "hernquist":
+        p = gen3DHernquist(Npart, r0)
 
     return p
     
@@ -66,21 +85,44 @@ def vesc_Plummer(r, M, r0):
 def vcirc_Plummer(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Plummer(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
 
+# Initial velocities for particles in the Jaffe model
+def vesc_Jaffe(r, M, r0):
+    return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r_0 + r))) ** (1 / 2)
+
+def vcirc_Jaffe(r, M, r0):
+    return np.einsum('i,ij->ij', vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
+
+# Initial velocities for particles in the Hernquist model
+def vesc_Hernquist(r, M, r0):
+    return np.sqrt(2 * const.G_ * M / r0) * (1 + r / r0) ** (-1 / 2)
+
+def vcirc_Hernquist(r, M, r0):
+    return np.einsum('i,ij->ij', vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
+
 def generate_v(r, M, r0, type_="plummer"):
-    if type_ == "plummer":
-        v = vcirc_Plummer(r, M, r0)
     if type_ == "plummer2D":
         #def ve(rr, r0):
         #    return np.sqrt(2 * const.G_ * Mtot / np.sqrt(rr ** 2 + r0 ** 2))
 
         vesc = np.empty(len(r))
+        mag_r = np.linalg.norm(r, axis=1)
         for i in range(len(r)):
-            vesc[i] = vesc_Plummer(mag_r[i], r0) #compute the escape velocity for each particle
+            vesc[i] = vesc_Plummer(mag_r[i], M, r0) #compute the escape velocity for each particle
             #print(vesc[i])
 
         vx = -vesc * r[:,1] / np.sqrt(r[:,0] ** 2 + r[:,1] ** 2)
         vy = vesc * r[:,0] / np.sqrt(r[:,0] ** 2 + r[:,1] ** 2)
         v = np.stack((vx,vy), axis=1)
+
+    if type_ == "plummer":
+        v = vcirc_Plummer(r, M, r0)
+
+    if type == "jaffe":
+        v = vcirc_Jaffe(r, M, r0)
+
+    if type == "hernquist":
+        v = vcirc_Hernquist(r, M, r0)
+
     return v
 
 def generate(N, Mtot, r0, disp, type_="plummer"):
@@ -135,7 +177,8 @@ if __name__ == "__main__":
     frames = 400
     disp = 800
 
-    r, v = generate(Nparticles, Mtot, r0, disp)
+    #r, v = generate(Nparticles, Mtot, r0, disp)
+    r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer")
     #mag_v = np.linalg.norm(v, axis=1)
     #plt.scatter(range(Nparticles//10),mag_v[::10])
     #plt.show()

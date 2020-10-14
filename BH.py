@@ -163,10 +163,12 @@ def BHF_kickstart(ROOT, particles , Mtot, r0, Forces=None, θ=0.5, ε=0.1, conn=
 	if Forces is None and conn is not None:
 		Forces = conn.recv() #waits until there's something to receive
 
+	ε = 0.1 #smoothing factor for SMBH
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ, ε=ε)
-		Fg = np.sum(np.array(force_arr), axis=0) - 1 * const.G_ * Mtot * p.r / ((r0) ** 2 + np.linalg.norm(p.r) ** 2) ** (3 / 2) 
+		Fg = np.sum(np.array(force_arr), axis=0) #- 1 * const.G_ * Mtot * p.r / ((r0) ** 2 + np.linalg.norm(p.r) ** 2) ** (3 / 2) 
+		Fg -= const.G_ * 10 ** 12 * p.r / (np.linalg.norm(p.r) ** 2 + + ε ** 2) ** 3 / 2 #add force of central black hole of 10**9 solar masses
 		Forces[i,:] = Fg.astype(dtype=c_double)
 
 	#send the updated Forces array back through the Pipe
