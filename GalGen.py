@@ -87,7 +87,7 @@ def vcirc_Plummer(r, M, r0):
 
 # Initial velocities for particles in the Jaffe model
 def vesc_Jaffe(r, M, r0):
-    return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r_0 + r))) ** (1 / 2)
+    return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r0 + r))) ** (1 / 2)
 
 def vcirc_Jaffe(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
@@ -117,10 +117,10 @@ def generate_v(r, M, r0, type_="plummer"):
     if type_ == "plummer":
         v = vcirc_Plummer(r, M, r0)
 
-    if type == "jaffe":
+    if type_ == "jaffe":
         v = vcirc_Jaffe(r, M, r0)
 
-    if type == "hernquist":
+    if type_ == "hernquist":
         v = vcirc_Hernquist(r, M, r0)
 
     return v
@@ -169,7 +169,7 @@ def GeneratorPlot(p, type_="spatial", histograms=False):
     plt.show()
 
 if __name__ == "__main__":
-    Nparticles = 3000
+    Nparticles = 1000
     θ = 0.6 
     dt = 0.01
     Mtot = 10 ** 9

@@ -52,13 +52,13 @@ if __name__ == "__main__":
 	'''
 	Nparticles = 1000
 	θ = 0.6 
-	dt = 0.005
+	dt = 0.01
 	Mtot = 10 ** 9
 	r0 = 20
-	frames = 400
+	frames = 500
 	disp = 1600
 
-	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer")
+	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer2D")
 	r = r[:,:2]; v = v[:,:2]
 	L = 300#2 * np.linalg.norm(r[-1])
 
