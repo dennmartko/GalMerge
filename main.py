@@ -50,15 +50,15 @@ if __name__ == "__main__":
 		10. Dispersion (disp) is the random motions of the stars relative to the "systemic" velocity.
 
 	'''
-	Nparticles = 1000
+	Nparticles = 10000
 	θ = 0.6 
-	dt = 0.01
-	Mtot = 10 ** 9
+	dt = 0.005
+	Mtot = 10 ** 12
 	r0 = 20
 	frames = 500
 	disp = 1600
 
-	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer2D")
+	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer2D") #'plummer2D' gives radial motion of particles outward. 'plummer' just remains stationary
 	r = r[:,:2]; v = v[:,:2]
 	L = 300#2 * np.linalg.norm(r[-1])
 
