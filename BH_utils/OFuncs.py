@@ -52,7 +52,9 @@ def GForce(M, rp, Rcm, ε=0.1):
 @njit(fastmath=True)
 def BHF_handler(rp, Rcm, L, θ):
 	r = rp - Rcm
+
 	D = (r[0] ** 2 + r[1] ** 2) ** (1 / 2)
+
 
 	if D == 0:
 		return False

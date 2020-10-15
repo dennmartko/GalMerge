@@ -85,6 +85,30 @@ def vesc_Plummer(r, M, r0):
 def vcirc_Plummer(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Plummer(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
 
+#BRAND NEW vcirc_Plummer!!!
+def vcirc_Plummer2000(r, M, r0):
+    R = np.linalg.norm(r, axis=1) #compute the magnitude of r
+    φ = np.arctan2(r[:,1], r[:,0]) #compute the azimuth angle (φ) corresponding to each position vector
+    #θ = np.arccos(r[:,2] / R) #compute the polar angle (θ) corresponding to each position vector
+    θ = np.full(r.shape[0], np.pi / 2)
+    transf = R * np.array([[-np.sin(θ) * np.sin(φ), np.cos(θ) * np.cos(φ)],
+                           [np.sin(θ) * np.cos(φ), np.cos(θ) * np.sin(φ)],
+                           [np.zeros(r.shape[0]), -np.sin(θ)]]) #transformation matrix from (phi, theta) coordinates to (x, y, z)
+    
+    #randomly generate a velocity vector (v) tangent to the spherical surface
+    f = np.random.uniform(low=0, high=1, size=r.shape[0])
+    mag_v = f * vesc_Plummer(np.linalg.norm(r, axis=1), M, r0)
+    χ = np.random.uniform(low=0, high=2 * np.pi, size=r.shape[0])
+    
+    vφ = mag_v * np.cos(χ)
+    vθ = mag_v * np.sin(χ)
+    v = np.stack((vφ, vθ), axis=1)
+
+    #transform the velocity vector (v) tangent to the spherical surface to a cartesian coordinate vector (v_prime)
+    v_prime = np.einsum('ij,kji->ik', v, transf)
+
+    return v_prime
+
 # Initial velocities for particles in the Jaffe model
 def vesc_Jaffe(r, M, r0):
     return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r0 + r))) ** (1 / 2)
@@ -115,7 +139,7 @@ def generate_v(r, M, r0, type_="plummer"):
         v = np.stack((vx,vy), axis=1)
 
     if type_ == "plummer":
-        v = vcirc_Plummer(r, M, r0)
+        v = vcirc_Plummer2000(r, M, r0)
 
     if type_ == "jaffe":
         v = vcirc_Jaffe(r, M, r0)

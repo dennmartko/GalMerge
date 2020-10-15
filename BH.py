@@ -128,7 +128,7 @@ def Tree(node, particles):
 		# if a potential cell's mass is nonzero create it!
 		if M1 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 1)
-			D1 = Cell(newmidR, node.L / 2, parent=node, M = M1, R_CM = num1 / M1)
+			D1 = Cell(newmidR, newL, parent=node, M = M1, R_CM = num1 / M1)
 			node.daughters.append(D1)
 			Tree(D1, particles1)
 		if M2 != 0:
@@ -149,13 +149,14 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
-def BHF(node, rp, force_arr, θ, ε=0.1):
+def BHF(node, rp, force_arr, θ, ε):
 	daughters = node.daughters
-	if BHF_handler(rp, node.R_CM, node.L, θ) or daughters == []:
-		force_arr.append(GForce(node.M, rp, node.R_CM, ε=ε))
-	else:
-		for i in range(len(daughters)):
-			BHF(daughters[i], rp, force_arr, θ, ε=ε)
+	if not (node.R_CM == rp).all():
+		if BHF_handler(rp, node.R_CM, node.L, θ) or daughters == []:
+			force_arr.append(GForce(node.M, rp, node.R_CM, ε=ε))
+		else:
+			for i in range(len(daughters)):
+				BHF(daughters[i], rp, force_arr, θ, ε=ε)
 
 def BHF_kickstart(ROOT, particles , Mtot, r0, Forces=None, θ=0.5, ε=0.1, conn=None):
 	#Forces will be None if the platform is 'win32'.  In that case we should
@@ -163,12 +164,12 @@ def BHF_kickstart(ROOT, particles , Mtot, r0, Forces=None, θ=0.5, ε=0.1, conn=
 	if Forces is None and conn is not None:
 		Forces = conn.recv() #waits until there's something to receive
 
-	ε = 0.1 #smoothing factor for SMBH
+	#ε_BH = 0.1 #smoothing factor for SMBH
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ, ε=ε)
 		Fg = np.sum(np.array(force_arr), axis=0) - 1 * const.G_ * Mtot * p.r / ((r0) ** 2 + np.linalg.norm(p.r) ** 2) ** (3 / 2) 
-		#Fg -= const.G_ * 10 ** 12 * p.r / (np.linalg.norm(p.r) ** 2 + + ε ** 2) ** 3 / 2 #add force of central black hole of 10**9 solar masses
+		#Fg -= const.G_ * 10 ** 9 * p.r / (np.linalg.norm(p.r) ** 2 + ε ** 2) ** 3 / 2 #add force of central black hole of 10**9 solar masses
 		Forces[i,:] = Fg.astype(dtype=c_double)
 
 	#send the updated Forces array back through the Pipe

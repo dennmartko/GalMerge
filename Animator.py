@@ -26,8 +26,8 @@ def AnimateOrbit(file,frames):
 
     fig = figure(figsize=(15,15))
     ax = fig.add_subplot(111)
-    ax.set_xlim((-300,300))
-    ax.set_ylim((-300,300))
+    ax.set_xlim((-100,100))
+    ax.set_ylim((-100,100))
     ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
     ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
 

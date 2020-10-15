@@ -50,23 +50,26 @@ if __name__ == "__main__":
 		10. Dispersion (disp) is the random motions of the stars relative to the "systemic" velocity.
 
 	'''
-	Nparticles = 10000
-	θ = 0.6 
+	Nparticles = 2000
+	θ = 0.7
 	dt = 0.005
 	Mtot = 10 ** 12
-	r0 = 20
-	frames = 500
+	r0 = 5 # <--
+	frames = 100
 	disp = 1600
 
-	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer2D") #'plummer2D' gives radial motion of particles outward. 'plummer' just remains stationary
+	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer") #'plummer2D' gives radial motion of particles outward. 'plummer' just remains stationary
+	#r = np.array([[-1,0.0001],[1,0.0001]])
+	#v = np.array([[0,0],[0,0]])
 	r = r[:,:2]; v = v[:,:2]
-	L = 300#2 * np.linalg.norm(r[-1])
+	L = 150#2 * np.linalg.norm(r[-1])
 
-	particles = [Particle(r[i], v[i], m=Mtot / Nparticles) for i in range(Nparticles)] #:,i
+	particles = [Particle(r[i], v[i], m=Mtot/Nparticles) for i in range(Nparticles)] #:,i
 	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
 
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
+
 	for frame in tqdm(range(frames)):
 		#GetSituation(r,colors)
 		# compute the location of the Center of Mass (COM) and total mass for the
@@ -83,7 +86,10 @@ if __name__ == "__main__":
 		################################################
 		##    COMPUTE FORCES USING MULTIPROCESSING    ##
 		################################################
-		N_CPU = cpu_count() #get the number of CPU cores
+		try:
+			N_CPU = int(sys.argv[1])
+		except:
+			N_CPU = cpu_count() #get the number of CPU cores
 		PLATFORM = sys.platform #get the patform on which this script is running
 
 		#NN defines the slice ranges for the particle array.
@@ -139,15 +145,12 @@ if __name__ == "__main__":
 
 		r,v = particles2arr(particles)
 
-		if frame == 0:
-			r, v, dummy = leapfrog(r, Forces, v, dt=dt, init=True)
+		if frame % 2 == 0:
+			r, v = leapfrog(r, Forces, v, dt=dt)
+			SDR.append(r)
+			SDV.append(v)
 		else:
-			if frame % 2 == 0:
-				r, v, vstore = leapfrog(r, Forces, v, dt=dt)
-				SDR.append(r)
-				SDV.append(vstore)
-			else:
-				r, v, vstore = leapfrog(r, Forces, v, dt=dt)
+			r, v = leapfrog(r, Forces, v, dt=dt)
 
 		particles = updateparticles(r, v, particles)
 
