@@ -86,32 +86,42 @@ def vcirc_Plummer(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Plummer(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
 
 #BRAND NEW vcirc_Plummer!!!
-def vcirc_Plummer2000(r, M, r0):
+def vcirc_Plummer2000(r, M, r0, ζ = 1):
     R = np.linalg.norm(r, axis=1) #compute the magnitude of r
     φ = np.arctan2(r[:,1], r[:,0]) #compute the azimuth angle (φ) corresponding to each position vector
     #θ = np.arccos(r[:,2] / R) #compute the polar angle (θ) corresponding to each position vector
-    θ = np.full(r.shape[0], np.pi / 2)
-    transf = R * np.array([[-np.sin(θ) * np.sin(φ), np.cos(θ) * np.cos(φ)],
-                           [np.sin(θ) * np.cos(φ), np.cos(θ) * np.sin(φ)],
-                           [np.zeros(r.shape[0]), -np.sin(θ)]]) #transformation matrix from (phi, theta) coordinates to (x, y, z)
+    θ = np.full(r.shape[0], np.pi / 2) #assumes all particles lie on a disk!
+
+    transf = np.array([[-np.sin(θ) * np.sin(φ), np.cos(θ) * np.cos(φ)],
+                       [np.sin(θ) * np.cos(φ), np.cos(θ) * np.sin(φ)],
+                       [np.zeros(r.shape[0]), -np.sin(θ)]]) #transformation matrix from (phi, theta) coordinates to (x, y, z)
     
     #randomly generate a velocity vector (v) tangent to the spherical surface
-    f = np.random.uniform(low=0.3, high=0.7, size=r.shape[0])
+    f = np.random.uniform(low=0.3, high=0.6, size=r.shape[0])
     mag_v = f * vesc_Plummer(np.linalg.norm(r, axis=1), M, r0)
     χ = np.random.uniform(low=0, high=2 * np.pi, size=r.shape[0])
     
-    vφ = mag_v * np.cos(χ)
+    """
+        ζ : 0 (or anything else) no fixed rotation direction around polar axis
+        ζ : -1 clockwise rotation around polar axis (i.e. East-West rotation)
+        ζ : +1 anti-clockwise rotation around polar axis (i.e. West-East rotation)
+
+    """
+    if abs(ζ) == 1:
+        vφ = ζ * np.abs(mag_v * np.cos(χ))
+    else:
+        vφ = mag_v * np.cos(χ)
     vθ = mag_v * np.sin(χ)
     v = np.stack((vφ, vθ), axis=1)
 
-    #transform the velocity vector (v) tangent to the spherical surface to a cartesian coordinate vector (v_prime)
+    #transform the velocity vector (v) tangent to the spherical surface to a cartesian coordinate vector (v_prime) 
     v_prime = np.einsum('ij,kji->ik', v, transf)
 
     return v_prime
 
 # Initial velocities for particles in the Jaffe model
 def vesc_Jaffe(r, M, r0):
-    return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r0 + r))) ** (1 / 2)
+    return np.sqrt(2 * const.G_ * M / r0)*(-np.log(r / (r0 + r))) ** (1 / 2) # ik ga wel editen. zorg er wel voor dat ik m niet save
 
 def vcirc_Jaffe(r, M, r0):
     return np.einsum('i,ij->ij', vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0) / np.sqrt(2), randUnitVec(len(r)))
@@ -193,6 +203,7 @@ def GeneratorPlot(p, type_="spatial", histograms=False):
     plt.show()
 
 if __name__ == "__main__":
+    '''
     Nparticles = 1000
     θ = 0.6 
     dt = 0.01
@@ -200,11 +211,11 @@ if __name__ == "__main__":
     r0 = 15
     frames = 400
     disp = 800
-
+    '''
     #r, v = generate(Nparticles, Mtot, r0, disp)
     r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer")
     #mag_v = np.linalg.norm(v, axis=1)
     #plt.scatter(range(Nparticles//10),mag_v[::10])
     #plt.show()
-    GeneratorPlot(r , type_="spatial", histograms=True)
-    GeneratorPlot(v , type_="velocity")
+    #GeneratorPlot(r , type_="spatial", histograms=True)
+    #GeneratorPlot(v , type_="velocity")

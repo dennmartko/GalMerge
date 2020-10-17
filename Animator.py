@@ -26,8 +26,8 @@ def AnimateOrbit(file,frames):
 
     fig = figure(figsize=(15,15))
     ax = fig.add_subplot(111)
-    ax.set_xlim((-100,100))
-    ax.set_ylim((-100,100))
+    ax.set_xlim((-50,50))
+    ax.set_ylim((-50,50))
     ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
     ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
 
@@ -39,4 +39,4 @@ def AnimateOrbit(file,frames):
 
 
 #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
-#AnimateOrbit(outfile, 600)
+#AnimateOrbit(outfile, 60)
