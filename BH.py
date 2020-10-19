@@ -158,18 +158,17 @@ def BHF(node, rp, force_arr, θ, ε):
 			for i in range(len(daughters)):
 				BHF(daughters[i], rp, force_arr, θ, ε=ε)
 
-def BHF_kickstart(ROOT, particles , Mtot, r0, Forces=None, θ=0.5, ε=0.1, conn=None):
+def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, ε=0.1, conn=None):
 	#Forces will be None if the platform is 'win32'.  In that case we should
 	#receive Forces through a duplex Pipe.
 	if Forces is None and conn is not None:
 		Forces = conn.recv() #waits until there's something to receive
 
-	ε_SMBH = r0 #smoothing factor for SMBH (supermassive black hole)
+	#iterate through all particles
 	for i, p in enumerate(particles):
 		force_arr = []
 		BHF(ROOT, p.r, force_arr, θ, ε=ε)
-		Fg = np.sum(np.array(force_arr), axis=0) #- 1 * const.G_ * Mtot * p.r / ((r0) ** 2 + np.linalg.norm(p.r) ** 2) ** (3 / 2) 
-		Fg -= const.G_ * Mtot * p.r / (np.linalg.norm(p.r) ** 2 + ε_SMBH ** 2) ** (3 / 2) #add force of central black hole of 10**9 solar masses
+		Fg = np.sum(np.array(force_arr), axis=0)
 		Forces[i,:] = Fg.astype(dtype=c_double)
 
 	#send the updated Forces array back through the Pipe

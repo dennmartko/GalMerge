@@ -14,6 +14,45 @@ from ODEInt import leapfrog
 from Animator import AnimateOrbit
 from GalGen import generate
 
+def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="2d"):
+	'''
+		Nparticles : number of stars in the Galaxy
+		Mtot : total mass of stars in the Galaxy
+		r0 : scaling radius of the Galaxy
+		R0 : offset from origin
+		Vsys : systemic velocity of the Galaxy in kpc/Gyr ~ 0.9784619419 km/s
+		Msmbh : mass of the supermassive black hole (SMBH) at the center of the Galaxy
+		ζ : parameter defining the rotation direction of stars in the Galaxy:
+			1 : anti-clockwise rotation
+			-1 : clockwise rotation
+			0 : each star rotates in a random direction
+			(defaults to '1', i.e. anti-clockwise)
+		type_ : type of Galactic model to use (defaults to 'plummer')
+		kind : defines the dimensionality of setup (either '2d' or '3d') N.B.: currently only 2d dimensional Galaxies can be simulated using BH!
+	'''
+	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
+	m = np.full(Nparticles, Mtot / Nparticles) #generate mass array where all stars have the same mass
+
+	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v arrays
+	if kind == "2d":
+		r = r[:,:2]; v = v[:,:2]
+
+	#Add systemic velocities and offset from the origin. N.B. these vectors need to be 2D if 'kind' was set to '2d'!
+	r += R0
+	v += Vsys
+
+	#add SMBH to the Galactic center
+	r = np.append(r, R0, axis=0)
+	v = np.append(v, Vsys, axis=0)
+	m = np.append(m, Msmbh)
+
+	#generate particle objects
+	particles = [Particle(r[i], v[i], m=m[i]) for i in range(Nparticles + 1)] # Nparticles + 1 to ensure the SMBH is included
+
+	return particles, r, v
+
+
+
 
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
@@ -41,38 +80,41 @@ if __name__ == "__main__":
 		1. Nparticles indicates the amount of particles in the simulation recommended is an amount between 1000 and 10000 = 1k-10k
 		2. The amount of frames for test runs to observe any flaws should be between 70 and 200 to obtain reasonable computing time. (within 5mins to 1h)
 		3. Theta indicates the BH performance or approximation. The higher θ, the faster the algorithm is but less accurate. Recommended is: θ=[0.5,0.8]
-		4. The algorithm typically follows the following idea: GENERATE GALAXY + INITIAL CONDITIONS -> START COMPUTING FRAMES <--> (BARNES HUT ALGORITHM -> INTEGRATOR); --> MOVIE
-		5. A mass of M = 1E9 to 1E12 is recommended.
+		4. The recommended timestep dt, based on obtaining smooth orbits, is recommended to be smaller than 0.01 Gyrs. This requirement is substantiated by the crossing time of the Galaxy.
+		5. The algorithm typically follows the following idea: GENERATE GALAXY + INITIAL CONDITIONS -> START COMPUTING FRAMES <--> (BARNES HUT ALGORITHM -> INTEGRATOR); --> MOVIE
+		5. A total stellar mass of M = 1E9 to 1E12 is recommended.
 		6. The program automatically detects the maximumum number of possible cpu cores on your computer and will maximize its usage. WINDOWS, LINUX, and MAC OS are supported.
-		7. The potential used can be altered; Current options are: "plummer"
-		8. The recommended timestep dt, based on obtaining smooth orbits, is recommended to be smaller than 0.01 Gyrs.
-		9. r0 is directly related to the maximum radius of the galaxy and acts as a scaling radius.
-		10. Dispersion (disp) is the random motions of the stars relative to the "systemic" velocity.
+		   If you wish to set this number manually you can provide it as an argument to the run, e.g. 'python3 main.py 2' to use two cores.
+		7. The Galactic model used to generate a Galaxy can be altered. Current options are: "plummer", "jaffe" and "hernquist".
+		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	Nparticles = 10000
+	frames = 300
 	θ = 0.6
 	dt = 0.005
-	Mtot = 10 **10
-	r0 = 10 # <--
-	frames = 1000
-	disp = 1600
+	L = 100
 
-	r, v = generate(Nparticles, Mtot, r0, disp, type_="plummer") #'plummer2D' gives radial motion of particles outward.  'plummer' just remains
- #stationary
-	#r = np.array([[-1,0.0001],[1,0.0001]])
-	#v = np.array([[0,0],[0,0]])
-	r = r[:,:2]
-	v = v[:,:2]
-	L = 100#2 * np.linalg.norm(r[-1])
+	#Galaxy specific parameters
+	Nparticles = 1000
+	Mtot = 10 ** 10
+	r0 = 10
+	R0 = np.array([0, 0]).reshape(1, 2) #np.array([10, 10]).reshape(1, 2)
+	Vsys = np.array([0, 0]).reshape(1, 2)
+	Msmbh = Mtot
 
-	particles = [Particle(r[i], v[i], m=2e6) for i in range(Nparticles)] #:,i
+	particles, r, v = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh)
+	Nparticles += 1 #don't forget this when adding more galaxies!!!
+
 	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
 
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
 
 	for frame in tqdm(range(frames)):
+		#uncomment to get situation frame by frame
+		#r, v = particles2arr(particles)
+		#GetSituation(r,colors)
+		
 		#Np_in_frame = sum([1 for rr in r if np.linalg.norm(rr)<= L])
 		#tqdm.write(Np_in_frame)
 		# compute the location of the Center of Mass (COM) and total mass for the
@@ -121,22 +163,22 @@ if __name__ == "__main__":
 			if i == N_CPU - 2:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Mtot, r0), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:], Mtot, r0), kwargs=dict(Forces=Forces[i * NN:], θ=θ)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i * NN:], θ=θ)) #spawn process
 					p.start() #start process
 			else:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Mtot, r0), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN], Mtot, r0), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ)) #spawn process
 					p.start() #start process
 			processes.append(p)
 
@@ -147,7 +189,6 @@ if __name__ == "__main__":
 		#join and terminate all processes
 		processes_joinAndTerminate(processes)
 
-		#r, v = particles2arr(particles)
 		if frame % 2 == 0 and frame != 0:
 			SDR.append(r)
 			#resync v and store
