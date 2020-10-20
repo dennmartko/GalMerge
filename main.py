@@ -31,7 +31,7 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 		kind : defines the dimensionality of setup (either '2d' or '3d') N.B.: currently only 2d dimensional Galaxies can be simulated using BH!
 	'''
 	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
-	m = np.full(Nparticles, Mtot / Nparticles) #generate mass array where all stars have the same mass
+	m = np.full(Nparticles, (Mtot - Msmbh) / Nparticles) #generate mass array where all stars have the same mass
 
 	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v arrays
 	if kind == "2d":
@@ -89,18 +89,18 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 300
-	θ = 0.6
+	frames = 600
+	θ = 0.7
 	dt = 0.005
 	L = 100
 
 	#Galaxy specific parameters
-	Nparticles = 1000
-	Mtot = 10 ** 10
+	Nparticles = 5000
+	Msmbh = 10 ** 9
+	Mtot = Msmbh + 10 ** 8 # stars contribute 10^8Msol 
 	r0 = 10
 	R0 = np.array([0, 0]).reshape(1, 2) #np.array([10, 10]).reshape(1, 2)
 	Vsys = np.array([0, 0]).reshape(1, 2)
-	Msmbh = Mtot
 
 	particles, r, v = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh)
 	Nparticles += 1 #don't forget this when adding more galaxies!!!
@@ -111,12 +111,31 @@ if __name__ == "__main__":
 	SDR = [r] # Storage of Data for R
 
 	for frame in tqdm(range(frames)):
-		#uncomment to get situation frame by frame
-		#r, v = particles2arr(particles)
-		#GetSituation(r,colors)
-		
-		#Np_in_frame = sum([1 for rr in r if np.linalg.norm(rr)<= L])
-		#tqdm.write(Np_in_frame)
+		# debugger code:
+		if frame == 0:
+			try:
+				debug = str(sys.argv[2]) == "--debug"
+				debugfile = os.path.dirname(os.path.abspath(__file__)) + '/' + "debug_log.txt"
+				with open(debugfile, 'w') as f:
+					f.write("START\n")
+				t_start = time.time()
+				t_end = t_start
+			except:
+				debug = False
+
+		if debug and frame % 1 == 0:
+			t_end = time.time()
+			r, v = particles2arr(particles)
+			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2) else 0 for rr in r])
+
+			#GetSituation(r,colors)
+
+			with open(debugfile, 'a') as f:
+				f.write("Np : {}, T : {} s\n".format(Np_in_frame, t_end - t_start))
+			t_start = time.time()
+
+
+
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
 		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])

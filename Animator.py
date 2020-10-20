@@ -35,7 +35,7 @@ def AnimateOrbit(file,frames):
     outfile = os.path.dirname(os.path.abspath(__file__)) + "/animation.mp4"
     writer = animation.writers['ffmpeg']
     writer = writer(fps=10)
-    ani.save(outfile, writer=writer, dpi = 100)
+    ani.save(outfile, writer=writer, dpi = 300)
 
 
 #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
