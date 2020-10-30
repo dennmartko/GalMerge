@@ -14,6 +14,7 @@ from ODEInt import leapfrog
 from Animator import AnimateOrbit
 from GalGen import generate
 
+
 def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="2d"):
 	'''
 		Nparticles : number of stars in the Galaxy
@@ -50,8 +51,6 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 	particles = [Particle(r[i], v[i], m=m[i]) for i in range(Nparticles + 1)] # Nparticles + 1 to ensure the SMBH is included
 
 	return particles, r, v
-
-
 
 
 def particles2arr(particles):
@@ -96,7 +95,7 @@ if __name__ == "__main__":
 
 	#Galaxy specific parameters
 	Nparticles = 5000
-	Msmbh = 10 ** 9
+	Msmbh = 10 ** 6
 	Mtot = Msmbh + 10 ** 8 # stars contribute 10^8Msol 
 	r0 = 10
 	R0 = np.array([0, 0]).reshape(1, 2) #np.array([10, 10]).reshape(1, 2)
