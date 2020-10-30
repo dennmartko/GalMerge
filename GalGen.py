@@ -97,7 +97,7 @@ def vcirc_Plummer2000(r, M, r0, ζ = 1):
                        [np.zeros(r.shape[0]), -np.sin(θ)]]) #transformation matrix from (phi, theta) coordinates to (x, y, z)
     
     #randomly generate a velocity vector (v) tangent to the spherical surface
-    f = np.random.uniform(low=0.3, high=0.6, size=r.shape[0])
+    f = np.random.uniform(low=0.6, high=1, size=r.shape[0])
     mag_v = f * vesc_Plummer(np.linalg.norm(r, axis=1), M, r0)
     χ = np.random.uniform(low=0, high=2 * np.pi, size=r.shape[0])
     
