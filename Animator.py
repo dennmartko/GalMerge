@@ -26,15 +26,15 @@ def AnimateOrbit(file,frames):
 
     fig = figure(figsize=(15,15))
     ax = fig.add_subplot(111)
-    ax.set_xlim((-50,50))
-    ax.set_ylim((-50,50))
+    ax.set_xlim((-150,150))
+    ax.set_ylim((-150,150))
     ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
     ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
 
     ani = animation.FuncAnimation(fig, Frame, interval=200, frames=frames)
-    outfile = os.path.dirname(os.path.abspath(__file__)) + "/animation.mp4"
+    outfile = os.path.dirname(os.path.abspath(__file__)) + "/animationTEST.mp4"
     writer = animation.writers['ffmpeg']
-    writer = writer(fps=10)
+    writer = writer(fps=12)
     ani.save(outfile, writer=writer, dpi = 300)
 
 

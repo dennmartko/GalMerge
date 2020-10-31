@@ -149,16 +149,16 @@ def Tree(node, particles):
 
 
 # Functions for computing the gravitational force on a single particle
-def BHF(node, rp, force_arr, θ, ε):
+def BHF(node, rp, force_arr, θ, ε, SMBHS):
 	daughters = node.daughters
 	if not (node.R_CM == rp).all():
 		if BHF_handler(rp, node.R_CM, node.L, θ) or daughters == []:
-			force_arr.append(GForce(node.M, rp, node.R_CM, ε=ε))
+			force_arr.append(GForce(node.M, rp, node.R_CM, SMBHS, ε=ε))
 		else:
 			for i in range(len(daughters)):
-				BHF(daughters[i], rp, force_arr, θ, ε=ε)
+				BHF(daughters[i], rp, force_arr, θ, ε=ε, SMBHS=SMBHS)
 
-def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, ε=0.1, conn=None):
+def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, ε=0.1, SMBHS=None, conn=None):
 	#Forces will be None if the platform is 'win32'.  In that case we should
 	#receive Forces through a duplex Pipe.
 	if Forces is None and conn is not None:
@@ -167,7 +167,7 @@ def BHF_kickstart(ROOT, particles, Forces=None, θ=0.5, ε=0.1, conn=None):
 	#iterate through all particles
 	for i, p in enumerate(particles):
 		force_arr = []
-		BHF(ROOT, p.r, force_arr, θ, ε=ε)
+		BHF(ROOT, p.r, force_arr, θ, ε=ε, SMBHS=SMBHS)
 		Fg = np.sum(np.array(force_arr), axis=0)
 		Forces[i,:] = Fg.astype(dtype=c_double)
 

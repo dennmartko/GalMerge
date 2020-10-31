@@ -43,10 +43,16 @@ def get_condr(r, L, midR):
 	return 2 * (r - midR) / L
 
 
-@njit(fastmath=True)
-def GForce(M, rp, Rcm, ε=0.1):
+def GForce(M, rp, Rcm, SMBHS, ε=0.1):
 	r = rp-Rcm
-	Fg = -1*(const.G_ * M)*r / (np.linalg.norm(rp - Rcm)**2 + ε**2)**(3/2) # ε is softening parameter defaulting to 0.1
+	Fg = -1 * (const.G_ * M) * r / (np.linalg.norm(r) ** 2 + ε ** 2) ** (3 / 2) # ε is softening parameter defaulting to 0.1
+
+	#compute gravitational force of the supermassive black holes
+	if SMBHS is not None:
+		for SMBH in SMBHS:
+			rSMBH = rp - SMBH.r #vector pointing radially away from the supermassive blackhole
+			Fg -= (const.G_ * SMBH.m) * rSMBH / (np.linalg.norm(rSMBH) ** 2 + SMBH.ε ** 2) ** (3 / 2)
+
 	return Fg
 
 @njit(fastmath=True)

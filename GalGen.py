@@ -67,6 +67,7 @@ def generate_r(Npart, r0=None, type_='plummer'):
 
 # Escape velocity function according to the Plummer model
 def vesc_Plummer(r, M, r0):
+    #return np.sqrt(4 * const.G_ * M / r0) * (1 + r ** 2 / r0 ** 2) ** (-1 / 4)
     return np.sqrt(2 * const.G_ * M / r0) * (1 + r ** 2 / r0 ** 2) ** (-1 / 4)
 
 # Escape velocity function according to the Jaffe model
@@ -90,7 +91,7 @@ def vcirc(r, M, r0, ζ=1, type_="plummer"):
                        [np.zeros(r.shape[0]), -np.sin(θ)]]) #transformation matrix from (phi, theta) coordinates to (x, y, z)
     
     #randomly generate a velocity vector (v) tangent to the spherical surface
-    f = np.random.uniform(low=0.3, high=0.6, size=r.shape[0])
+    f = np.random.uniform(low=0.7, high=0.9, size=r.shape[0])
 
     if type_ == "plummer":
         v_e = vesc_Plummer(np.linalg.norm(r, axis=1), M, r0)

@@ -15,6 +15,19 @@ from Animator import AnimateOrbit
 from GalGen import generate
 
 
+class BlackHole:
+	__slots__ = ('r', 'v', 'ε', 'm')
+	def __init__(self, r, v, ε, m):
+		# Position, velocity and mass
+		self.r = r
+		self.v = v
+		self.m = m
+
+		#softening parameter for force calculation
+		self.ε = ε
+		
+		
+
 def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="2d"):
 	'''
 		Nparticles : number of stars in the Galaxy
@@ -34,23 +47,27 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
 	m = np.full(Nparticles, (Mtot - Msmbh) / Nparticles) #generate mass array where all stars have the same mass
 
-	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v arrays
+	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v
+	# arrays
 	if kind == "2d":
-		r = r[:,:2]; v = v[:,:2]
+		r = r[:,:2]
+		v = v[:,:2]
 
-	#Add systemic velocities and offset from the origin. N.B. these vectors need to be 2D if 'kind' was set to '2d'!
-	r += R0
-	v += Vsys
+		#Add systemic velocities and offset from the origin
+		r += R0[:2].reshape(1, 2)
+		v += Vsys[:2].reshape(1, 2)
+	else:
+		r += R0.reshape(1, 3)
+		v += Vsys.reshape(1, 3)
+		
 
 	#add SMBH to the Galactic center
-	r = np.append(r, R0, axis=0)
-	v = np.append(v, Vsys, axis=0)
-	m = np.append(m, Msmbh)
+	SMBH = [BlackHole(R0, Vsys, r0, Msmbh)]
 
 	#generate particle objects
-	particles = [Particle(r[i], v[i], m=m[i]) for i in range(Nparticles + 1)] # Nparticles + 1 to ensure the SMBH is included
+	particles = [Particle(r[i], v[i], m=m[i]) for i in range(Nparticles)]
 
-	return particles, r, v
+	return particles, r, v, SMBH
 
 
 def particles2arr(particles):
@@ -88,21 +105,22 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 600
+	frames = 600  
 	θ = 0.7
 	dt = 0.005
-	L = 100
+	L = 300 * 2
 
 	#Galaxy specific parameters
 	Nparticles = 5000
-	Msmbh = 10 ** 6
-	Mtot = Msmbh + 10 ** 8 # stars contribute 10^8Msol 
+	Msmbh = 10 ** 8
+	Mtot = Msmbh + 10 ** 8 # stars contribute 10^8Msol
 	r0 = 10
-	R0 = np.array([0, 0]).reshape(1, 2) #np.array([10, 10]).reshape(1, 2)
-	Vsys = np.array([0, 0]).reshape(1, 2)
+	R0 = np.array([0, 0])
+	Vsys = np.array([10, 0])
 
-	particles, r, v = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh)
-	Nparticles += 1 #don't forget this when adding more galaxies!!!
+	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh)
+	SMBHS = SMBH
+	#Nparticles += #don't forget this when adding more galaxies!!!
 
 	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
 
@@ -181,22 +199,22 @@ if __name__ == "__main__":
 			if i == N_CPU - 2:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i * NN:], θ=θ)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i * NN:], θ=θ, SMBHS=SMBHS)) #spawn process
 					p.start() #start process
 			else:
 				if PLATFORM == 'win32':
 					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=θ, conn=child_conn)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
 					p.start() #start process
 					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
 					connections.append(parent_conn)
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ)) #spawn process
+					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ, SMBHS=SMBHS)) #spawn process
 					p.start() #start process
 			processes.append(p)
 
@@ -207,7 +225,7 @@ if __name__ == "__main__":
 		#join and terminate all processes
 		processes_joinAndTerminate(processes)
 
-		if frame % 2 == 0 and frame != 0:
+		if frame % 1 == 0 and frame != 0:
 			SDR.append(r)
 			#resync v and store
 			SDV.append(v + Forces * dt / 2)
@@ -217,8 +235,18 @@ if __name__ == "__main__":
 			#kickstart v by moving it half a timestep backwards
 			v = v + Forces * dt / 2
 			r, v = leapfrog(r, Forces, v, dt)
+
+			#kickstart leapfrog for the black holes
+			for SMBH in SMBHS:
+				SMBH.v = SMBH.v + 0 * dt / 2
+				SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
 		else:
 			r, v = leapfrog(r, Forces, v, dt)
+
+			#update location and velocity corresponding to the SMBHS
+			for SMBH in SMBHS:
+				SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
+				
 
 		particles = updateparticles(r, v, particles)
 			
