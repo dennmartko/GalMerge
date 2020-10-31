@@ -228,11 +228,13 @@ if __name__ == "__main__":
 		if frame % 1 == 0 and frame != 0:
 			SDR.append(r)
 			#resync v and store
+			print("resync:\n",v,"\n",Forces*dt/2, end="\n")
 			SDV.append(v + Forces * dt / 2)
 		
 		#integrate using leapfrog (assuming v is half a step out of sync)
 		if frame == 0:
 			#kickstart v by moving it half a timestep backwards
+			print("bring out of sync:\n",v,"\n",Forces*dt/2, end="\n")
 			v = v + Forces * dt / 2
 			r, v = leapfrog(r, Forces, v, dt)
 

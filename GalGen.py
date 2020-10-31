@@ -44,6 +44,23 @@ def gen3DHernquist(N, r0):
     r = r0 * (f + np.sqrt(f)) / (1 - f)
     return np.einsum('i,ij->ij', r, randUnitVec(N))
 
+#function to generate N random particle positions according to a uniform disk
+#density profile
+def gen3DUniformDisk(N, r0):
+    #NOTE: r0 is here the maximum radius of the disk!
+    f = np.random.rand(N) #fraction of mass M0 enclosed within r, f in [0, 1]
+    r = r0 * np.sqrt(f)
+    φ = np.random.uniform(low=0, high=2 * np.pi, size=N)
+    
+    #generate a random unit vector in the x,y plane
+    x = np.cos(φ)
+    y = np.sin(φ)
+    z = np.zeros(N)
+    uvec = np.stack((x,y,z), axis=1)
+
+    return np.einsum('i,ij->ij', r, uvec)
+
+
 # handler function for generating N random particle positions
 def generate_r(Npart, r0=None, type_='plummer'):
     if r0 is None:
@@ -57,6 +74,9 @@ def generate_r(Npart, r0=None, type_='plummer'):
 
     if type_ == "hernquist":
         p = gen3DHernquist(Npart, r0)
+
+    if type_ == "disk":
+        p = gen3DUniformDisk(Npart, r0)
 
     return p
     
@@ -98,6 +118,8 @@ def vcirc(r, M, r0, ζ=1, type_="plummer"):
         v_e = vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0)
     elif type_ == "hernquist":
         v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
+    elif type_ == "disk":
+        v_e = np.zeros(r.shape[0])
 
     mag_v = f * v_e
     χ = np.random.uniform(low=0, high=2 * np.pi, size=r.shape[0])
@@ -132,6 +154,8 @@ def vcirc_test(r, M, r0, ζ=1, type_="plummer"):
         v_e = vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0)
     elif type_ == "hernquist":
         v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
+    elif type_ == "disk":
+        v_e = np.zeros(r.shape[0])
 
     mag_v = f * v_e
         
@@ -221,6 +245,6 @@ if __name__ == "__main__":
     Mtot = 10 ** 10
     r0 = 10
 
-    r, v = generate(Nparticles, Mtot, r0, type_="plummer")
+    r, v = generate(Nparticles, Mtot, r0, type_="disk")
     GeneratorPlot(r , type_="spatial", histograms=True)
     GeneratorPlot(v , type_="velocity")
