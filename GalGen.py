@@ -133,8 +133,7 @@ def vcirc_test(r, M, r0, ζ=1, type_="plummer"):
     elif type_ == "hernquist":
         v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
 
-    mag_v = f * v_e
-        
+    mag_v = 4* v_e
     """
         ζ : 0 (or anything else) no fixed rotation direction around polar axis
         ζ : -1 clockwise rotation around polar axis (i.e. East-West rotation)
@@ -218,9 +217,9 @@ def GeneratorPlot(p, type_="spatial", histograms=False):
 
 if __name__ == "__main__":
     Nparticles = 10000
-    Mtot = 10 ** 10
-    r0 = 10
+    Mtot = 10 ** 8
+    r0 = 20
 
-    r, v = generate(Nparticles, Mtot, r0, type_="plummer")
+    r, v = generate(Nparticles, Mtot, r0, type_="hernquist")
     GeneratorPlot(r , type_="spatial", histograms=True)
     GeneratorPlot(v , type_="velocity")

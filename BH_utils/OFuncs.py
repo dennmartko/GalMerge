@@ -51,7 +51,7 @@ def GForce(M, rp, Rcm, SMBHS, ε=0.1):
 	if SMBHS is not None:
 		for SMBH in SMBHS:
 			rSMBH = rp - SMBH.r #vector pointing radially away from the supermassive blackhole
-			Fg -= (const.G_ * SMBH.m) * rSMBH / (np.linalg.norm(rSMBH) ** 2 + SMBH.ε ** 2) ** (3 / 2)
+			Fg -= (const.G_ * SMBH.m) * rSMBH / (np.linalg.norm(rSMBH)*(np.linalg.norm(rSMBH) + 20)**2)
 
 	return Fg
 

@@ -105,7 +105,7 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 150  #600
+	frames = 500  #600
 	θ = 0.7
 	dt = 0.005
 	L = 300 * 2
@@ -114,11 +114,12 @@ if __name__ == "__main__":
 	Nparticles = 1000 #3000
 	Msmbh = 10 ** 8
 	Mtot = Msmbh # stars contribute 10^8Msol
-	r0 = 10
+	r0 = 20
 	R0 = np.array([0, 0])
 	Vsys = np.array([10, 0])
 
-	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh)
+	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, type_="hernquist")
+
 	SMBHS = SMBH
 	#Nparticles += #don't forget this when adding more galaxies!!!
 
@@ -129,6 +130,7 @@ if __name__ == "__main__":
 
 	for frame in tqdm(range(frames)):
 		# debugger code:
+		#GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
