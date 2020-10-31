@@ -42,7 +42,7 @@ class Particle(object):
 			self.m = m
 
 
-def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, particles4):
+def rmParticles(rdd1, rdd2, rdd3, rdd4, rdd5, rdd6, rdd7, rdd8, particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8):
 	# np.delete() does not work with empty lists
 	if len(rdd1) != 0:
 		particles1 = np.delete(particles1, rdd1, axis=0)
@@ -56,7 +56,19 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, particles1, particles2, particles3, part
 	if len(rdd4) != 0:
 		particles4 = np.delete(particles4, rdd4, axis=0)
 
-	return particles1, particles2, particles3, particles4 
+	if len(rdd5) != 0:
+		particles5 = np.delete(particles5, rdd5, axis=0)
+
+	if len(rdd6) != 0:
+		particles6 = np.delete(particles6, rdd6, axis=0)
+
+	if len(rdd7) != 0:
+		particles7 = np.delete(particles7, rdd7, axis=0)
+
+	if len(rdd8) != 0:
+		particles8 = np.delete(particles8, rdd8, axis=0)
+
+	return particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8 
 
 
 def Tree(node, particles):
@@ -67,6 +79,10 @@ def Tree(node, particles):
 	particles2 = particles.copy()
 	particles3 = particles.copy()
 	particles4 = particles.copy()
+	particles5 = particles.copy()
+	particles6 = particles.copy()
+	particles7 = particles.copy()
+	particles8 = particles.copy()
 
 	# Redundant particles for each quadrant (the number in the variable name
 	# refers to the ith quadrant)
@@ -78,8 +94,16 @@ def Tree(node, particles):
 	rdd3app = rdd3.append
 	rdd4 = []
 	rdd4app = rdd4.append
+	rdd5 = []
+	rdd5app = rdd5.append
+	rdd6 = []
+	rdd6app = rdd6.append
+	rdd7 = []
+	rdd7app = rdd7.append
+	rdd8 = []
+	rdd8app = rdd8.append
 
-	num1, num2, num3, num4, M1, M2, M3, M4 = Tree_template_init()
+	num1, num2, num3, num4, num5, num6, num7, num8, M1, M2, M3, M4, M5, M6, M7, M8 = Tree_template_init()
 
 	node.daughters = []
 
@@ -91,39 +115,102 @@ def Tree(node, particles):
 		r = p.r
 		m = p.m
 		condr = get_condr(r, node.L, node.midR) #condition r
-		if 1 > condr[0] > 0 and 1 > condr[1] > 0:
+		#2D slice above z=0
+		if 1 > condr[0] > 0 and 1 > condr[1] > 0 and 1 > condr[2] > 0:
 			pcount += 1
 			rdd2app(indx)
 			rdd3app(indx)
 			rdd4app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
 
 			num1, M1 = CM_Handler(num1,r,m,M1)
-		elif -1 < condr[0] < 0 and 1 > condr[1] > 0:
+		elif -1 < condr[0] < 0 and 1 > condr[1] > 0 and 1 > condr[2] > 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd3app(indx)
 			rdd4app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
 
 			num2, M2 = CM_Handler(num2,r,m,M2)
-		elif -1 < condr[0] < 0 and -1 < condr[1] < 0:
+		elif -1 < condr[0] < 0 and -1 < condr[1] < 0 and 1 > condr[2] > 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd4app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
 
 			num3, M3 = CM_Handler(num3,r,m,M3)
-		elif 1 > condr[0] > 0 and -1 < condr[1] < 0:
+		elif 1 > condr[0] > 0 and -1 < condr[1] < 0 and 1 > condr[2] > 0:
 			pcount += 1
 			rdd1app(indx)
 			rdd2app(indx)
 			rdd3app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
 
 			num4, M4 = CM_Handler(num4,r,m,M4)
+		#2D slice beneath z=0
+		elif 1 > condr[0] > 0 and 1 > condr[1] > 0 and -1 < condr[2] < 0:
+			pcount += 1
+			rdd1app(indx)
+			rdd2app(indx)
+			rdd3app(indx)
+			rdd4app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
+
+			num5, M5 = CM_Handler(num5,r,m,M5)
+		elif -1 < condr[0] < 0 and 1 > condr[1] > 0 and -1 < condr[2] < 0:
+			pcount += 1
+			rdd1app(indx)
+			rdd2app(indx)
+			rdd3app(indx)
+			rdd4app(indx)
+			rdd5app(indx)
+			rdd7app(indx)
+			rdd8app(indx)
+
+			num6, M6 = CM_Handler(num6,r,m,M6)
+		elif -1 < condr[0] < 0 and -1 < condr[1] < 0 and -1 < condr[2] < 0:
+			pcount += 1
+			rdd1app(indx)
+			rdd2app(indx)
+			rdd3app(indx)
+			rdd4app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd8app(indx)
+
+			num7, M7 = CM_Handler(num7,r,m,M7)
+		elif 1 > condr[0] > 0 and -1 < condr[1] < 0 and -1 < condr[2] < 0:
+			pcount += 1
+			rdd1app(indx)
+			rdd2app(indx)
+			rdd3app(indx)
+			rdd4app(indx)
+			rdd5app(indx)
+			rdd6app(indx)
+			rdd7app(indx)
+
+			num8, M8 = CM_Handler(num8,r,m,M8)
 
 	# If theres more than one particle in a node, we can create new nodes!
 	if pcount > 1:
 		#remove redundant particles from particles arrays
-		particles1, particles2, particles3, particles4 = rmParticles(np.array(rdd1), np.array(rdd2), np.array(rdd3), np.array(rdd4), particles1, particles2, particles3, particles4)
+		particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8 = rmParticles(np.array(rdd1), np.array(rdd2), np.array(rdd3), np.array(rdd4), np.array(rdd5),
+										np.array(rdd6),np.array(rdd7), np.array(rdd8), particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8)
 
 		# if a potential cell's mass is nonzero create it!
 		if M1 != 0:
@@ -146,6 +233,26 @@ def Tree(node, particles):
 			D4 = Cell(newmidR, newL, parent=node, M = M4, R_CM = num4 / M4)
 			node.daughters.append(D4)
 			Tree(D4, particles4)
+		if M5 != 0:
+			newmidR, newL = NewCellGeom(node.midR, node.L, 5)
+			D5 = Cell(newmidR, newL, parent=node, M = M5, R_CM = num5 / M5)
+			node.daughters.append(D5)
+			Tree(D5, particles5)
+		if M6 != 0:
+			newmidR, newL = NewCellGeom(node.midR, node.L, 6)
+			D6 = Cell(newmidR, newL, parent=node, M = M6, R_CM = num6 / M6)
+			node.daughters.append(D6)
+			Tree(D6, particles6)
+		if M7 != 0:
+			newmidR, newL = NewCellGeom(node.midR, node.L, 7)
+			D7 = Cell(newmidR, newL, parent=node, M = M7, R_CM = num7 / M7)
+			node.daughters.append(D7)
+			Tree(D7, particles7)
+		if M8 != 0:
+			newmidR, newL = NewCellGeom(node.midR, node.L, 8)
+			D8 = Cell(newmidR, newL, parent=node, M = M8, R_CM = num8 / M8)
+			node.daughters.append(D8)
+			Tree(D8, particles8)
 
 
 # Functions for computing the gravitational force on a single particle

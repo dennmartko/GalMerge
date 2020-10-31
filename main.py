@@ -28,7 +28,7 @@ class BlackHole:
 		
 		
 
-def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="2d"):
+def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="3d"):
 	'''
 		Nparticles : number of stars in the Galaxy
 		Mtot : total mass of stars in the Galaxy
@@ -42,7 +42,7 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 			0 : each star rotates in a random direction
 			(defaults to '1', i.e. anti-clockwise)
 		type_ : type of Galactic model to use (defaults to 'plummer')
-		kind : defines the dimensionality of setup (either '2d' or '3d') N.B.: currently only 2d dimensional Galaxies can be simulated using BH!
+		kind : defines the dimensionality of setup (either '2d' or '3d')
 	'''
 	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
 	m = np.full(Nparticles, 1) #generate mass array where all stars have the same mass #(Mtot - Msmbh) / Nparticles
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 500  #600
+	frames = 100  #600
 	θ = 0.7
 	dt = 0.005
 	L = 300 * 2
@@ -115,8 +115,8 @@ if __name__ == "__main__":
 	Msmbh = 10 ** 8
 	Mtot = Msmbh # stars contribute 10^8Msol
 	r0 = 20
-	R0 = np.array([0, 0])
-	Vsys = np.array([10, 0])
+	R0 = np.array([0, 0, 0])
+	Vsys = np.array([10, 0, 0])
 
 	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, type_="hernquist")
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 		if debug and frame % 1 == 0:
 			t_end = time.time()
 			r, v = particles2arr(particles)
-			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2) else 0 for rr in r])
+			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])
 
 			#GetSituation(r,colors)
 
@@ -161,7 +161,7 @@ if __name__ == "__main__":
 		Mgal = np.sum([p.m for p in particles])
 
 		# initialize ROOT cell
-		ROOT = Cell(np.array([0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
+		ROOT = Cell(np.array([0, 0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
 		#BUILD TREE
 		Tree(ROOT, particles)
@@ -188,11 +188,11 @@ if __name__ == "__main__":
 
 		#create a multiprocessing array for the force on each particle in shared
 		#memory
-		mp_Forces = Array(c_double, 2 * Nparticles)
-		#create a 2D numpy array sharing its memory location with the
+		mp_Forces = Array(c_double, 3 * Nparticles)
+		#create a 3D numpy array sharing its memory location with the
 		#multiprocessing
 		#array
-		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 2))
+		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 3))
 
 		#spawn the processes
 		for i in range(N_CPU - 1):

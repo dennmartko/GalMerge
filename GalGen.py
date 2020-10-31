@@ -81,9 +81,9 @@ def vesc_Hernquist(r, M, r0):
 def vcirc(r, M, r0, ζ=1, type_="plummer"):
     R = np.linalg.norm(r, axis=1) #compute the magnitude of r
     φ = np.arctan2(r[:,1], r[:,0]) #compute the azimuth angle (φ) corresponding to each position vector
-    #θ = np.arccos(r[:,2] / R) #compute the polar angle (θ) corresponding to
+    θ = np.arccos(r[:,2] / R) #compute the polar angle (θ) corresponding to
                                       #each position vector
-    θ = np.full(r.shape[0], np.pi / 2) #assumes all particles lie on a disk!
+    #θ = np.full(r.shape[0], np.pi / 2) #assumes all particles lie on a disk!
 
     transf = np.array([[-np.sin(θ) * np.sin(φ), np.cos(θ) * np.cos(φ)],
                        [np.sin(θ) * np.cos(φ), np.cos(θ) * np.sin(φ)],
@@ -133,7 +133,7 @@ def vcirc_test(r, M, r0, ζ=1, type_="plummer"):
     elif type_ == "hernquist":
         v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
 
-    mag_v = 4* v_e
+    mag_v = f* v_e
     """
         ζ : 0 (or anything else) no fixed rotation direction around polar axis
         ζ : -1 clockwise rotation around polar axis (i.e. East-West rotation)
@@ -161,8 +161,8 @@ def generate_v(r, r0=None, Mtot=None, ζ=1, type_="plummer"):
     if Mtot is None:
         raise ValueError("'Mtot' must be defined!")
 
-    #v = vcirc(r, Mtot, r0, ζ = ζ, type_=type_)
-    v = vcirc_test(r, Mtot, r0, ζ = ζ, type_=type_)
+    v = vcirc(r, Mtot, r0, ζ = ζ, type_=type_)
+    #v = vcirc_test(r, Mtot, r0, ζ = ζ, type_=type_)
 
     return v
 
