@@ -45,7 +45,7 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 		kind : defines the dimensionality of setup (either '2d' or '3d') N.B.: currently only 2d dimensional Galaxies can be simulated using BH!
 	'''
 	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
-	m = np.full(Nparticles, (Mtot - Msmbh) / Nparticles) #generate mass array where all stars have the same mass
+	m = np.full(Nparticles, 1) #generate mass array where all stars have the same mass #(Mtot - Msmbh) / Nparticles
 
 	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v
 	# arrays
@@ -105,15 +105,15 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 600  
+	frames = 150  #600
 	θ = 0.7
 	dt = 0.005
 	L = 300 * 2
 
 	#Galaxy specific parameters
-	Nparticles = 5000
+	Nparticles = 1000 #3000
 	Msmbh = 10 ** 8
-	Mtot = Msmbh + 10 ** 8 # stars contribute 10^8Msol
+	Mtot = Msmbh # stars contribute 10^8Msol
 	r0 = 10
 	R0 = np.array([0, 0])
 	Vsys = np.array([10, 0])
