@@ -99,6 +99,19 @@ def vesc_Hernquist(r, M, r0):
 
 # Function to generate non-radial velocity vectors
 def vcirc(r, M, r0, ζ=1, type_="plummer"):
+    if type_ == "disk":
+        mag_v = 120 * np.tanh(np.linalg.norm(r, axis=1) / r0)
+        if abs(ζ) == 1:
+            vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
+            vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
+            vz = np.zeros(r.shape[0])
+        else:
+            ζ = np.random.choice([-1, 1], size=r.shape[0])
+            vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
+            vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
+            vz = np.zeros(r.shape[0])
+        return np.stack((vx, vy, vz), axis=1)
+
     R = np.linalg.norm(r, axis=1) #compute the magnitude of r
     φ = np.arctan2(r[:,1], r[:,0]) #compute the azimuth angle (φ) corresponding to each position vector
     #θ = np.arccos(r[:,2] / R) #compute the polar angle (θ) corresponding to
@@ -118,8 +131,6 @@ def vcirc(r, M, r0, ζ=1, type_="plummer"):
         v_e = vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0)
     elif type_ == "hernquist":
         v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
-    elif type_ == "disk":
-        v_e = np.zeros(r.shape[0])
 
     mag_v = f * v_e
     χ = np.random.uniform(low=0, high=2 * np.pi, size=r.shape[0])
@@ -186,8 +197,8 @@ def generate_v(r, r0=None, Mtot=None, ζ=1, type_="plummer"):
     if Mtot is None:
         raise ValueError("'Mtot' must be defined!")
 
-    #v = vcirc(r, Mtot, r0, ζ = ζ, type_=type_)
-    v = vcirc_test(r, Mtot, r0, ζ = ζ, type_=type_)
+    v = vcirc(r, Mtot, r0, ζ = ζ, type_=type_)
+    #v = vcirc_test(r, Mtot, r0, ζ = ζ, type_=type_)
 
     return v
 
@@ -242,7 +253,7 @@ def GeneratorPlot(p, type_="spatial", histograms=False):
 
 if __name__ == "__main__":
     Nparticles = 10000
-    Mtot = 10 ** 10
+    Mtot = 10 ** 8
     r0 = 10
 
     r, v = generate(Nparticles, Mtot, r0, type_="disk")
