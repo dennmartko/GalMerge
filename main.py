@@ -24,7 +24,7 @@ class BlackHole:
 		self.m = m
 
 		#softening parameter for force calculation
-		self.ε = ε
+		self.ε = 40
 		
 		
 
@@ -56,7 +56,7 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 		#Add systemic velocities and offset from the origin
 		r += R0[:2].reshape(1, 2)
 		v += Vsys[:2].reshape(1, 2)
-	else:
+	elif kind == "3d":
 		r += R0.reshape(1, 3)
 		v += Vsys.reshape(1, 3)
 		
@@ -85,8 +85,8 @@ def GetSituation(r,colors):
 	plt.figure(figsize=(10,10))
 	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors,s=0.4)
 	plt.grid()
-	plt.ylim(-50,50)
-	plt.xlim(-50,50)
+	plt.ylim(-100,100)
+	plt.xlim(-100,100)
 	plt.show()
 
 
@@ -105,20 +105,20 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 100  #600
-	θ = 0.7
+	frames = 1000  #600
+	θ = 0.9
 	dt = 0.005
 	L = 300 * 2
 
 	#Galaxy specific parameters
-	Nparticles = 1000 #3000
+	Nparticles = 4000 #3000
 	Msmbh = 10 ** 8
 	Mtot = Msmbh # stars contribute 10^8Msol
-	r0 = 20
+	r0 = 15
 	R0 = np.array([0, 0, 0])
-	Vsys = np.array([10, 0, 0])
+	Vsys = np.array([0, 0, 0])
 
-	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, type_="hernquist")
+	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, type_="plummer")
 
 	SMBHS = SMBH
 	#Nparticles += #don't forget this when adding more galaxies!!!
@@ -130,7 +130,6 @@ if __name__ == "__main__":
 
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		#GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"

@@ -350,4 +350,6 @@ MigrationBackup/
 .ionide/
 
 #OWN IGNORES
+./animations
 ./plots
+*.npz
