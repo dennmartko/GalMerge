@@ -80,6 +80,39 @@ def generate_r(Npart, r0=None, type_='plummer'):
     return p
     
 
+##############################
+##    ROTATION FUNCTIONS    ##
+##############################
+#rotation around x axis
+def Rx(θ):
+    return np.array([[1, 0, 0],
+                     [0, np.cos(θ), -np.sin(θ)],
+                     [0, np.sin(θ), np.cos(θ)]])
+
+#rotation around y axis
+def Ry(θ):
+    return np.array([[np.cos(θ), 0, np.sin(θ)],
+                     [0, 1, 0],
+                     [-np.sin(θ), 0, np.cos(θ)]])
+
+#rotation around z axis
+def Rz(θ):
+    return np.array([[np.cos(θ), -np.sin(θ), 0],
+                     [np.sin(θ), np.cos(θ), 0],
+                     [0, 0, 1]])
+
+#rotation operation
+def rotate(pnts, θ, axis=None):
+    if axis is None:
+        raise ValueError("'axis' is a required argument!")
+    if axis == 'x':
+        return np.einsum('ij,kj->ki', Rx(θ), pnts)
+    if axis == 'y':
+        return np.einsum('ij,kj->ki', Ry(θ), pnts)
+    if axis == 'z':
+        return np.einsum('ij,kj->ki', Rz(θ), pnts)
+
+
 ########################################
 ##    VELOCITY GENERATOR FUNCTIONS ##
 ########################################
@@ -257,6 +290,13 @@ if __name__ == "__main__":
     Mtot = 10 ** 8
     r0 = [2, 15] #20
 
+    θ = (np.pi / 4 , np.pi / 4, np.pi / 4)
+
     r, v = generate(Nparticles, Mtot, r0, type_="disk")
+    
+    #rotate r and v
+    r = rotate(rotate(rotate(r, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
+    v = rotate(rotate(rotate(v, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
+    
     GeneratorPlot(r , type_="spatial", histograms=True)
     GeneratorPlot(v , type_="velocity")

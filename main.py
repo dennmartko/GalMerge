@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
 from ODEInt import leapfrog
 from Animator import AnimateOrbit
-from GalGen import generate
+from GalGen import generate, rotate
 
 
 class BlackHole:
@@ -49,11 +49,21 @@ def setup_Galaxies(gal1, gal2=None):
 		for i in ["Bulge", "Disk"]:
 			if gal1[i][1] != 0:
 				r, v = generate(gal1[i][1], gal1["globals"]["M0"], gal1[i][2], ζ=gal1[i][3], type_=gal1[i][4])
+				if gal1["globals"]["θ"] is not None:
+					#rotate r and v
+					r = rotate(rotate(rotate(r, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+					v = rotate(rotate(rotate(v, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+
 				m = np.full(gal1[i][1], gal1[i][0] * gal1["globals"]['M0'] / gal1[i][1]).tolist()
 				particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1[i][1])]
 		
 		#generate dark matter particles
 		r, v = gal1["DM"][2]
+		if gal1["globals"]["θ"] is not None:
+			#rotate r and v
+			r = rotate(rotate(rotate(r, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+			v = rotate(rotate(rotate(v, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+
 		m = np.full(gal1["DM"][1], gal1["DM"][0] * gal1["globals"]["M0"] / gal1["DM"][1])
 		particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1["DM"][1])]
 
@@ -104,17 +114,18 @@ if __name__ == "__main__":
 	DM_v = np.array([[0,30,0],[-30,0,0],[0,-30,0],[30,0,0]])
 
 	#syntax: "component" : (mass fraction, N, r0, ζ, model) / "globals" defines
-	#the global
-	#variables corresponding to the galaxy
+	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
+	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
+	#respectively
 	Gal1 = { "Bulge" : (0.125, 800, 3.5, 1, "plummer"),
 			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([0, 0, 5])}
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([0, 0, 5]), "θ" : (np.pi / 4, np.pi / 4, np.pi / 4)}
 			}
 
 	#Runtime variables
-	frames = 600
+	frames = 100 #600
 	θ = 0.8
 	dt = 0.005
 	L = 300
