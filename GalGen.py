@@ -186,43 +186,6 @@ def vcirc(r, M, r0, ζ=1, type_="plummer"):
 
     return v_prime
 
-#TEST VERSION VCIRC
-def vcirc_test(r, M, r0, ζ=1, type_="plummer"):
-    #randomly generate a velocity vector (v) tangent to the spherical surface
-    f = np.random.uniform(low=0.7, high=0.9, size=r.shape[0])
-
-    if type_ == "plummer":
-        v_e = vesc_Plummer(np.linalg.norm(r, axis=1), M, r0)
-    elif type_ == "jaffe":
-        v_e = vesc_Jaffe(np.linalg.norm(r, axis=1), M, r0)
-    elif type_ == "hernquist":
-        v_e = vesc_Hernquist(np.linalg.norm(r, axis=1), M, r0)
-    elif type_ == "disk":
-        v_e = np.zeros(r.shape[0])
-
-    mag_v = f * v_e
-
-    """
-        ζ : 0 (or anything else) no fixed rotation direction around polar axis
-        ζ : -1 clockwise rotation around polar axis (i.e. East-West rotation)
-        ζ : +1 anti-clockwise rotation around polar axis (i.e. West-East rotation)
-
-    """
-    if abs(ζ) == 1:
-        vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
-        vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
-        vz = np.zeros(r.shape[0])
-    else:
-        ζ = np.random.choice([-1, 1], size=r.shape[0])
-        vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
-        vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
-        vz = np.zeros(r.shape[0])
-
-    v = np.stack((vx, vy, vz), axis=1)
-
-    return v
-
-
 def generate_v(r, r0=None, Mtot=None, ζ=1, type_="plummer"):
     if r0 is None:
         raise ValueError("'r0' must be defined!")
@@ -236,6 +199,10 @@ def generate_v(r, r0=None, Mtot=None, ζ=1, type_="plummer"):
 
     return v
 
+
+#############################
+##    GENERATOR HANDLER    ##
+#############################
 def generate(N, Mtot, r0, ζ=1, type_="plummer"):
     # N: number of particles to generate
     # Mtot: total mass of the Galaxy
