@@ -71,8 +71,8 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, rdd5, rdd6, rdd7, rdd8, particles1, part
 	return particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8 
 
 
-def Tree(node, particles):
-	#obj.append(node) # append the created node
+def Tree(node, particles, obj):
+	obj.append(node) # append the created node to the object list
 
 	# Hard copy the particle array
 	particles1 = particles.copy()
@@ -217,42 +217,42 @@ def Tree(node, particles):
 			newmidR, newL = NewCellGeom(node.midR, node.L, 1)
 			D1 = Cell(newmidR, newL, parent=node, M = M1, R_CM = num1 / M1)
 			node.daughters.append(D1)
-			Tree(D1, particles1)
+			Tree(D1, particles1, obj)
 		if M2 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 2)
 			D2 = Cell(newmidR, newL, parent=node, M = M2, R_CM = num2 / M2)
 			node.daughters.append(D2)
-			Tree(D2, particles2)
+			Tree(D2, particles2, obj)
 		if M3 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 3)
 			D3 = Cell(newmidR, newL, parent=node, M = M3, R_CM = num3 / M3)
 			node.daughters.append(D3)
-			Tree(D3, particles3)
+			Tree(D3, particles3, obj)
 		if M4 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 4)
 			D4 = Cell(newmidR, newL, parent=node, M = M4, R_CM = num4 / M4)
 			node.daughters.append(D4)
-			Tree(D4, particles4)
+			Tree(D4, particles4, obj)
 		if M5 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 5)
 			D5 = Cell(newmidR, newL, parent=node, M = M5, R_CM = num5 / M5)
 			node.daughters.append(D5)
-			Tree(D5, particles5)
+			Tree(D5, particles5, obj)
 		if M6 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 6)
 			D6 = Cell(newmidR, newL, parent=node, M = M6, R_CM = num6 / M6)
 			node.daughters.append(D6)
-			Tree(D6, particles6)
+			Tree(D6, particles6, obj)
 		if M7 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 7)
 			D7 = Cell(newmidR, newL, parent=node, M = M7, R_CM = num7 / M7)
 			node.daughters.append(D7)
-			Tree(D7, particles7)
+			Tree(D7, particles7, obj)
 		if M8 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 8)
 			D8 = Cell(newmidR, newL, parent=node, M = M8, R_CM = num8 / M8)
 			node.daughters.append(D8)
-			Tree(D8, particles8)
+			Tree(D8, particles8, obj)
 
 
 # Functions for computing the gravitational force on a single particle

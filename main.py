@@ -24,11 +24,11 @@ class BlackHole:
 		self.m = m
 
 		#softening parameter for force calculation
-		self.ε = 40
+		self.ε = 15
 		
 		
 
-def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", kind="3d"):
+def setup_Galaxies(gal1, gal2=None):
 	'''
 		Nparticles : number of stars in the Galaxy
 		Mtot : total mass of stars in the Galaxy
@@ -42,38 +42,30 @@ def setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, ζ=1, type_="plummer", k
 			0 : each star rotates in a random direction
 			(defaults to '1', i.e. anti-clockwise)
 		type_ : type of Galactic model to use (defaults to 'plummer')
-		kind : defines the dimensionality of setup (either '2d' or '3d')
 	'''
-	r, v = generate(Nparticles, Mtot, r0, ζ=ζ, type_=type_) # generate stellar positions and velocities
-	m = np.full(Nparticles, 1) #generate mass array where all stars have the same mass #(Mtot - Msmbh) / Nparticles
 
-	# if a 2D Galaxy needs to be generated slice off one dimension from de r and v
-	# arrays
-	if kind == "2d":
-		r = r[:,:2]
-		v = v[:,:2]
-
-		#Add systemic velocities and offset from the origin
-		r += R0[:2].reshape(1, 2)
-		v += Vsys[:2].reshape(1, 2)
-	elif kind == "3d":
-		r += R0.reshape(1, 3)
-		v += Vsys.reshape(1, 3)
+	if gal2 == None:
+		particles = []
+		for i in ["Bulge", "Disk"]:
+			if gal1[i][1] != 0:
+				r, v = generate(gal1[i][1], gal1["globals"]["M0"], gal1[i][2], ζ=gal1[i][3], type_=gal1[i][4])
+				m = np.full(gal1[i][1], gal1[i][0] * gal1["globals"]['M0'] / gal1[i][1]).tolist()
+				particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1[i][1])]
 		
+		#generate dark matter particles
+		r, v = gal1["DM"][2]
+		m = np.full(gal1["DM"][1], gal1["DM"][0] * gal1["globals"]["M0"] / gal1["DM"][1])
+		particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1["DM"][1])]
 
-	#add SMBH to the Galactic center
-	SMBH = [BlackHole(R0, Vsys, r0, Msmbh)]
+		SMBH = [BlackHole(gal1["globals"]["R0"], gal1["globals"]["Vsys"], 20 , gal1["SMBH"][0] * gal1["globals"]["M0"] / gal1["SMBH"][1])]
 
-	#generate particle objects
-	particles = [Particle(r[i], v[i], m=m[i]) for i in range(Nparticles)]
-
-	return particles, r, v, SMBH
+	return particles, SMBH
 
 
 def particles2arr(particles):
 	r = np.array([p.r for p in particles])
 	v = np.array([p.v for p in particles])
-	return r,v
+	return r, v
 
 def updateparticles(r,v, particles):
 	for indx,p in enumerate(particles):
@@ -85,8 +77,8 @@ def GetSituation(r,colors):
 	plt.figure(figsize=(10,10))
 	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors,s=0.4)
 	plt.grid()
-	plt.ylim(-100,100)
-	plt.xlim(-100,100)
+	plt.ylim(-25,25)
+	plt.xlim(-25,25)
 	plt.show()
 
 
@@ -105,29 +97,42 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
-	frames = 1000  #600
-	θ = 0.9
+	######################
+	#
+
+	DM_r = np.array([[10,0,0],[0,10,0],[-10,0,0],[0,-10,0]])
+	DM_v = np.array([[0,30,0],[-30,0,0],[0,-30,0],[30,0,0]])
+
+	#syntax: "component" : (mass fraction, N, r0, ζ, model) / "globals" defines
+	#the global
+	#variables corresponding to the galaxy
+	Gal1 = { "Bulge" : (0.125, 800, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
+			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+			 "SMBH": (0.48, 1, None, None, None),
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([0, 0, 5])}
+			}
+
+	#Runtime variables
+	frames = 600
+	θ = 0.8
 	dt = 0.005
-	L = 300 * 2
+	L = 300
 
-	#Galaxy specific parameters
-	Nparticles = 4000 #3000
-	Msmbh = 10 ** 8
-	Mtot = Msmbh # stars contribute 10^8Msol
-	r0 = 15
-	R0 = np.array([0, 0, 0])
-	Vsys = np.array([0, 0, 0])
+	#
+	######################
 
-	particles, r, v, SMBH = setup_Galaxy(Nparticles, Mtot, r0, R0, Vsys, Msmbh, type_="plummer")
+	particles, SMBH = setup_Galaxies(Gal1)
+	Nparticles = len(particles)
 
 	SMBHS = SMBH
-	#Nparticles += #don't forget this when adding more galaxies!!!
 
 	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
 
+	r, v = particles2arr(particles)
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
-
+	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
 		if frame == 0:
@@ -163,8 +168,11 @@ if __name__ == "__main__":
 		ROOT = Cell(np.array([0, 0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
 		#BUILD TREE
-		Tree(ROOT, particles)
-		
+		obj = []
+		Tree(ROOT, particles, obj)
+		SDC.append(obj)
+
+				
 		################################################
 		##    COMPUTE FORCES USING MULTIPROCESSING ##
 		################################################
@@ -251,7 +259,8 @@ if __name__ == "__main__":
 
 		particles = updateparticles(r, v, particles)
 			
-
+	cellfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
+	np.savez(cellfile, cells=np.array(SDC, dtype=object))
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
 	AnimateOrbit(outfile, len(SDR))
