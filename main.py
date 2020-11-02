@@ -93,8 +93,8 @@ def GetSituation(r, colors):
 	ax.yaxis.pane.fill = False
 	ax.zaxis.pane.fill = False
 
-	for p in particles:
-		ax.scatter(*p.r, color=colors, s=0.4)
+	for i, p in enumerate(particles):
+		ax.scatter(*p.r, color=colors[i], s=0.4)
 	
 	ax.grid()
 	lim = (-30, 30)
@@ -134,14 +134,14 @@ if __name__ == "__main__":
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, -20]), "Vsys" : np.array([0, 0, 5]), "θ" : (0, 0, 0)}
 			}
-
+	'''
 	Gal2 = { "Bulge" : (0.075, 150, 3.5, 1, "plummer"),
 			 "Disk": (0.425, 900, [5, 12], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 2 * 10 ** 7, "R0" : np.array([0, 0, 20]), "Vsys" : np.array([0, 0, -5]), "θ" : (0, 0, 0)}
 			}
-
+	'''
 	#Runtime variables
 	frames = 600 #600
 	θ = 0.8
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 	particles = []
 	SMBHS = []
 	
-	for Gal in [Gal1,Gal2]:
+	for Gal in [Gal1]:#,Gal2]:
 		setup_out = setup_Galaxies(Gal)
 		particles += setup_out[0]
 		SMBHS += setup_out[1]
@@ -169,6 +169,7 @@ if __name__ == "__main__":
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
+		#GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
@@ -268,42 +269,43 @@ if __name__ == "__main__":
 		#join and terminate all processes
 		processes_joinAndTerminate(processes)
 
+		####################
+		##    LEAPFROG    ##
+		####################
+		#storage
 		if frame % 1 == 0 and frame != 0:
-			SDR.append(r)
+			SDR.append(r) #x_{i+1}
 			#resync v and store
-			SDV.append(v + Forces * dt / 2)
-		
+			SDV.append(v + Forces * dt / 2) #v_{i+1} = v_{i+1/2} + a_{i+1}*Δt/2
+
 		#integrate using leapfrog (assuming v is half a step out of sync)
 		for i in SMBHS:
+			#compute the force on supermassive black hole 'i'
 			Fg = np.zeros(3)
 			for j in SMBHS:
 				if i != j:
 					R = i.r - j.r
 					Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
+			
 			if frame == 0:
-				#kickstart leapfrog for the black holes
-				i.v = i.v + Fg * dt / 2
-				i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
+				#kickstart leapfrog for the black holes by moving v half a step forward
+				i.v = i.v + Fg * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+				i.r = i.r + i.v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
 			else:
 				#update location and velocity corresponding to the SMBHS
-				i.r, i.v = leapfrog(i.r, 0, i.v, dt)
+				# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
+				# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
+				i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
 
 
 		if frame == 0:
 			#kickstart v by moving it half a timestep forward
-			v = v + Forces * dt / 2
-			r, v = leapfrog(r, Forces, v, dt)
-
-			#kickstart leapfrog for the black holes
-			#for SMBH in SMBHS:
-			#	SMBH.v = SMBH.v + 0 * dt / 2
-			#	SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
+			v = v + Forces * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+			r = r + v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
 		else:
+			# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
+			# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
 			r, v = leapfrog(r, Forces, v, dt)
-
-			#update location and velocity corresponding to the SMBHS
-			#for SMBH in SMBHS:
-			#	SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
 				
 
 		particles = updateparticles(r, v, particles)
