@@ -28,7 +28,7 @@ def remove_axes(ax, hidelabels=True):
 
     #remove grid
     ax.grid(False)
-
+    show()
     #remove labels
     if hidelabels:
         ax.set_xlabel("")
@@ -51,107 +51,79 @@ def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
     ax.plot3D([x+dx, x+dx], [y, y], [z, z+dz], **kwargs)
     return ax
 
-def AnimateOrbit(file,frames):
+def AnimateOrbit(path, frames, fps=20, sleep=200, window=(-75, 75)):
     style.use('dark_background')
     
     def Frame(i):
         del ax.collections[:]
         del ax.texts[:]
         stars = ax.scatter(xdata[i][:,0].astype(float), xdata[i][:,1].astype(float), xdata[i][:,2].astype(float), s=0.4, color='white')
-        ax.text (20 ,20 ,40 ,"t={:.2f}Gyr".format(t[i]))
+        ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(t[i]), fontsize=16, transform=ax.transAxes)
+        ax.text2D(0, 1, r"$dt = {}$".format(properties['dt']) + "\n" + r"$\theta = {}$".format(properties['θ']) + "\n" + "Number of Cells: {} \nBodies inside frame: {}".format(properties['NCinFrame'][i],properties['NPinFrame'][i]),
+                  ha="left", va="center", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="none", ec="w", pad=0.5))
+
         print(i)
         return (stars)
 
-
-    with np.load(file,allow_pickle=True) as f:
+    with np.load(path + "/Data.npz",allow_pickle=True) as f:
         xdata = f["r"]
 
+    properties = np.load(path + "/Properties.npz",allow_pickle=True)
+
     xdata.astype(float)
-    t = np.arange(0,0.005*frames,0.005)
-    length = len(xdata[0][:,0])
+    t = np.arange(0, properties['dt']*frames, properties['dt'])
+
     fig = figure(figsize =(10,10))
     ax = fig.add_subplot(111 , projection ='3d')
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
+
+    ax.set_xlim(window)
+    ax.set_ylim(window)
+    ax.set_zlim(window)
     
-    lim = (-75, 75)
-    ax.set_xlim(lim)
-    ax.set_ylim(lim)
-    ax.set_zlim(lim)
     ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
     ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
     ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
 
-    ani = animation.FuncAnimation(fig, Frame, interval=200, frames=frames)
+    ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
     outfile = os.path.dirname(os.path.abspath(__file__)) + "/animations/animationTEST.mp4"
-    ani.save(outfile,fps = 30, writer='ffmpeg',dpi =300)
+    ani.save(outfile, fps = fps, writer='ffmpeg', dpi=fig.dpi)
 
-def AnimateCells(file, frames):
+def AnimateCells(path, frames, fps=30, sleep=200, window=(-15, 15)):
     style.use('dark_background')
 
     def Frame(i):
         ax = fig.add_subplot(111 , projection ='3d')
         remove_axes(ax)
-        lim = (-15, 15)
-        ax.set(xlim=lim, ylim=lim, zlim=lim)
+        ax.set(xlim=window, ylim=window, zlim=window)
         #gc.collect()
         del ax.collections[:]
         del ax.texts[:]
-        k = 0
-        for cell in tqdm(Cdata[i]):
+        for k, cell in tqdm(enumerate(Cdata[i])):
             if cell.L > 1 and cell.L < 2:
-                k += 1
-                if k%4 == 0:
+                if k % 4 == 0:
                     ax = plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
-        ax.text (20 ,20 ,40 ,"t={:.2f}Gyr".format(t[i]))
+        ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(t[i]), fontsize=16, transform=ax.transAxes)
         return (ax)
 
-    with np.load(file, allow_pickle=True) as f:
+    with np.load(path + "/Cells.npz", allow_pickle=True) as f:
         Cdata = f["cells"]
-    
-        fig = figure(figsize =(10,10))
-    t = np.arange(0,0.005*frames,0.005)
 
-    ani = animation.FuncAnimation(fig, Frame, interval=200, frames=frames)
+    properties = np.load(path + "/Properties.npz",allow_pickle=True)
+    
+    fig = figure(figsize=(10,10))
+    t = np.arange(0, properties["dt"] * frames, properties["dt"])
+
+    ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
     outfile = os.path.dirname(os.path.abspath(__file__)) + "/animations/animationCellsTEST.mp4"
-    ani.save(outfile,fps = 30, writer='ffmpeg',dpi =300)
+    ani.save(outfile, fps = fps, writer='ffmpeg', dpi=fig.dpi)
 
 
 if __name__ == "__main__":
-    #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
-    #AnimateOrbit(outfile, 100)
+    path = os.path.dirname(os.path.abspath(__file__))
+    AnimateOrbit(path, 10)
 
-    style.use("dark_background")
-    fig = figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.xaxis.pane.fill = False
-    ax.yaxis.pane.fill = False
-    ax.zaxis.pane.fill = False
-    ax.set_xlim((-30,30))
-    ax.set_ylim((-30,30))
-    ax.set_zlim((-30,30))
-    ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
-    ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
-    ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
-    ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(0.00), fontsize=16, transform=ax.transAxes)
-    ax.text2D(0, 1, r"$dt = $" + "\n" + r"$\theta = $" + "\n" + "Number of Cells: \nBodies inside frame:", ha="left", va="center", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="none", ec="w", pad=0.5, transform=ax.transAxes))
-    ax.grid()
-    show()
-
-    #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
-    #AnimateCells(outfile, 100)
-
-    #with np.load(outfile,allow_pickle=True) as f:
-    #    Cdata = f["cells"]
-
-    #for frame in range(Cdata.shape[0]):
-    #    fig = figure(figsize=(10,10))
-    #    ax = fig.add_subplot(111, projection='3d')
-    #    remove_axes(ax)
-    #    limits = (-15, 15)
-    #    ax.set(xlim=limits, ylim=limits, zlim=limits)
-    #    for cell in tqdm(Cdata[frame]):
-    #        if cell.daughters == [] and cell.L > .25 and cell.L < 2:
-    #            plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
-    #    plt.show()
+    #path = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
+    #AnimateCells(path, 100)

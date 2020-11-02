@@ -143,10 +143,10 @@ if __name__ == "__main__":
 			 "Disk": (0.375, 1000, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 50, 0]), "Vsys" : np.array([-10, -5, 0]), "θ" : (0, 0, 0)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([25, 25, 25]), "Vsys" : np.array([-10, -5, 0]), "θ" : (np.pi/4, 0, np.pi/4)}
 			}
 	#Runtime variables
-	frames = 1000 #600
+	frames = 10 #600
 	θ = 0.8
 	dt = 0.005
 	L = 300
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		#GetSituation(r,colors)
+		GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
@@ -325,7 +325,7 @@ if __name__ == "__main__":
 
 	#save file with properties of the run
 	propertiesfile = os.path.dirname(os.path.abspath(__file__)) + "/Properties.npz"
-	np.savez(propertiesfile, θ=np.array(SDR, dtype=object), dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
+	np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
 	
 	#save file with Cell objects for each frame
 	cellfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
@@ -335,4 +335,4 @@ if __name__ == "__main__":
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
 	
-	AnimateOrbit(outfile, len(SDR))
+	AnimateOrbit(os.path.dirname(os.path.abspath(__file__)), len(SDR))
