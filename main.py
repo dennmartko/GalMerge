@@ -149,7 +149,9 @@ if __name__ == "__main__":
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
-				debugfile = os.path.dirname(os.path.abspath(__file__)) + '/' + "debug_log.txt"
+				if not os.isdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs"):
+					os.mkdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs")
+				debugfile = os.path.dirname(os.path.abspath(__file__)) + '/' + "logs/debug_log.txt"
 				with open(debugfile, 'w') as f:
 					f.write("START\n")
 				t_start = time.time()
