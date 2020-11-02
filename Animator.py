@@ -118,11 +118,11 @@ def AnimateCells(file, frames):
 
 
 if __name__ == "__main__":
-    #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
-    #AnimateOrbit(outfile, 100)
+    outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
+    AnimateOrbit(outfile, 100)
 
-    outfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
-    AnimateCells(outfile, 100)
+    #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
+    #AnimateCells(outfile, 100)
 
     #with np.load(outfile,allow_pickle=True) as f:
     #    Cdata = f["cells"]
