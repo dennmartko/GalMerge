@@ -10,8 +10,6 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from tqdm import tqdm
 
-style.use('dark_background')
-
 
 def remove_axes(ax, hidelabels=True):
     #remove panes
@@ -55,6 +53,7 @@ def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
     return ax
 
 def AnimateOrbit(file,frames):
+    style.use('dark_background')
     
     def Frame(i):
         del ax.collections[:]
@@ -89,6 +88,8 @@ def AnimateOrbit(file,frames):
     ani.save(outfile,fps = 30, writer='ffmpeg',dpi =300)
 
 def AnimateCells(file, frames):
+    style.use('dark_background')
+
     def Frame(i):
         ax = fig.add_subplot(111 , projection ='3d')
         remove_axes(ax)
@@ -101,7 +102,7 @@ def AnimateCells(file, frames):
         for cell in tqdm(Cdata[i]):
             if cell.L > 1 and cell.L < 2:
                 k += 1
-                if k%2 == 0:
+                if k%4 == 0:
                     ax = plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
         ax.text (20 ,20 ,40 ,"t={:.2f}Gyr".format(t[i]))
         return (ax)

@@ -2,11 +2,13 @@
 import time
 import os
 import sys
+import constants as const
 
 from multiprocessing import Process, Pipe, cpu_count, Array
 from ctypes import c_double
 from tqdm import tqdm
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 #own imports
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
@@ -28,7 +30,7 @@ class BlackHole:
 		
 		
 
-def setup_Galaxies(gal1, gal2=None):
+def setup_Galaxies(galaxy):
 	'''
 		Nparticles : number of stars in the Galaxy
 		Mtot : total mass of stars in the Galaxy
@@ -44,30 +46,29 @@ def setup_Galaxies(gal1, gal2=None):
 		type_ : type of Galactic model to use (defaults to 'plummer')
 	'''
 
-	if gal2 == None:
-		particles = []
-		for i in ["Bulge", "Disk"]:
-			if gal1[i][1] != 0:
-				r, v = generate(gal1[i][1], gal1["globals"]["M0"], gal1[i][2], ζ=gal1[i][3], type_=gal1[i][4])
-				if gal1["globals"]["θ"] is not None:
-					#rotate r and v
-					r = rotate(rotate(rotate(r, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
-					v = rotate(rotate(rotate(v, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+	particles = []
+	for i in ["Bulge", "Disk"]:
+		if galaxy[i][1] != 0:
+			r, v = generate(galaxy[i][1], galaxy["globals"]["M0"], galaxy[i][2], ζ=galaxy[i][3], type_=galaxy[i][4])
+			if galaxy["globals"]["θ"] is not None:
+				#rotate r and v
+				r = rotate(rotate(rotate(r, galaxy["globals"]["θ"][0], axis='x'), galaxy["globals"]["θ"][1], axis='y'), galaxy["globals"]["θ"][2], axis='z')
+				v = rotate(rotate(rotate(v, galaxy["globals"]["θ"][0], axis='x'), galaxy["globals"]["θ"][1], axis='y'), galaxy["globals"]["θ"][2], axis='z')
 
-				m = np.full(gal1[i][1], gal1[i][0] * gal1["globals"]['M0'] / gal1[i][1]).tolist()
-				particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1[i][1])]
+			m = np.full(galaxy[i][1], galaxy[i][0] * galaxy["globals"]['M0'] / galaxy[i][1]).tolist()
+			particles += [Particle(r[j] + galaxy["globals"]["R0"], v[j] + galaxy["globals"]["Vsys"], m=m[j]) for j in range(galaxy[i][1])]
 		
-		#generate dark matter particles
-		r, v = gal1["DM"][2]
-		if gal1["globals"]["θ"] is not None:
-			#rotate r and v
-			r = rotate(rotate(rotate(r, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
-			v = rotate(rotate(rotate(v, gal1["globals"]["θ"][0], axis='x'), gal1["globals"]["θ"][1], axis='y'), gal1["globals"]["θ"][2], axis='z')
+	#generate dark matter particles
+	r, v = galaxy["DM"][2]
+	if galaxy["globals"]["θ"] is not None:
+		#rotate r and v
+		r = rotate(rotate(rotate(r, galaxy["globals"]["θ"][0], axis='x'), galaxy["globals"]["θ"][1], axis='y'), galaxy["globals"]["θ"][2], axis='z')
+		v = rotate(rotate(rotate(v, galaxy["globals"]["θ"][0], axis='x'), galaxy["globals"]["θ"][1], axis='y'), galaxy["globals"]["θ"][2], axis='z')
 
-		m = np.full(gal1["DM"][1], gal1["DM"][0] * gal1["globals"]["M0"] / gal1["DM"][1])
-		particles += [Particle(r[j] + gal1["globals"]["R0"], v[j] + gal1["globals"]["Vsys"], m=m[j]) for j in range(gal1["DM"][1])]
+	m = np.full(galaxy["DM"][1], galaxy["DM"][0] * galaxy["globals"]["M0"] / galaxy["DM"][1])
+	particles += [Particle(r[j] + galaxy["globals"]["R0"], v[j] + galaxy["globals"]["Vsys"], m=m[j]) for j in range(galaxy["DM"][1])]
 
-		SMBH = [BlackHole(gal1["globals"]["R0"], gal1["globals"]["Vsys"], 20 , gal1["SMBH"][0] * gal1["globals"]["M0"] / gal1["SMBH"][1])]
+	SMBH = [BlackHole(galaxy["globals"]["R0"], galaxy["globals"]["Vsys"], 20 , galaxy["SMBH"][0] * galaxy["globals"]["M0"] / galaxy["SMBH"][1])]
 
 	return particles, SMBH
 
@@ -83,14 +84,23 @@ def updateparticles(r,v, particles):
 		p.v = v[indx]
 	return particles
 
-def GetSituation(r,colors):
-	plt.figure(figsize=(10,10))
-	plt.scatter([p.r[0] for p in particles],[p.r[1] for p in particles],color=colors,s=0.4)
-	plt.grid()
-	plt.ylim(-25,25)
-	plt.xlim(-25,25)
-	plt.show()
+def GetSituation(r, colors):
+	plt.style.use("dark_background")
+	
+	fig = plt.figure(figsize=(10,10))
+	ax = fig.add_subplot(111, projection="3d")
+	ax.xaxis.pane.fill = False
+	ax.yaxis.pane.fill = False
+	ax.zaxis.pane.fill = False
 
+	for p in particles:
+		ax.scatter(*p.r, color=colors, s=0.4)
+	
+	ax.grid()
+	lim = (-30, 30)
+	ax.set(xlim=lim, ylim=lim, zlim=lim)
+
+	plt.show()
 
 if __name__ == "__main__":
 	'''
@@ -110,6 +120,7 @@ if __name__ == "__main__":
 	######################
 	#
 
+	#location and velocity of MACHO's
 	DM_r = np.array([[10,0,0],[0,10,0],[-10,0,0],[0,-10,0]])
 	DM_v = np.array([[0,30,0],[-30,0,0],[0,-30,0],[30,0,0]])
 
@@ -117,26 +128,38 @@ if __name__ == "__main__":
 	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
 	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
 	#respectively
-	Gal1 = { "Bulge" : (0.125, 800, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
+	Gal1 = { "Bulge" : (0.125, 500, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 2000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([0, 0, 5]), "θ" : (np.pi / 4, np.pi / 4, np.pi / 4)}
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, -20]), "Vsys" : np.array([0, 0, 5]), "θ" : (0, 0, 0)}
+			}
+
+	Gal2 = { "Bulge" : (0.075, 150, 3.5, 1, "plummer"),
+			 "Disk": (0.425, 900, [5, 12], 1, "disk"),
+			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+			 "SMBH": (0.48, 1, None, None, None),
+			 "globals" : {"M0" : 2 * 10 ** 7, "R0" : np.array([0, 0, 20]), "Vsys" : np.array([0, 0, -5]), "θ" : (0, 0, 0)}
 			}
 
 	#Runtime variables
-	frames = 100 #600
+	frames = 600 #600
 	θ = 0.8
 	dt = 0.005
 	L = 300
 
 	#
 	######################
+	
+	particles = []
+	SMBHS = []
+	
+	for Gal in [Gal1,Gal2]:
+		setup_out = setup_Galaxies(Gal)
+		particles += setup_out[0]
+		SMBHS += setup_out[1]
 
-	particles, SMBH = setup_Galaxies(Gal1)
 	Nparticles = len(particles)
-
-	SMBHS = SMBH
 
 	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
 
@@ -169,8 +192,6 @@ if __name__ == "__main__":
 			with open(debugfile, 'a') as f:
 				f.write("Np : {}, T : {} s\n".format(Np_in_frame, t_end - t_start))
 			t_start = time.time()
-
-
 
 		# compute the location of the Center of Mass (COM) and total mass for the
 		# ROOT cell
@@ -253,21 +274,36 @@ if __name__ == "__main__":
 			SDV.append(v + Forces * dt / 2)
 		
 		#integrate using leapfrog (assuming v is half a step out of sync)
+		for i in SMBHS:
+			Fg = np.zeros(3)
+			for j in SMBHS:
+				if i != j:
+					R = i.r - j.r
+					Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
+			if frame == 0:
+				#kickstart leapfrog for the black holes
+				i.v = i.v + Fg * dt / 2
+				i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
+			else:
+				#update location and velocity corresponding to the SMBHS
+				i.r, i.v = leapfrog(i.r, 0, i.v, dt)
+
+
 		if frame == 0:
-			#kickstart v by moving it half a timestep backwards
+			#kickstart v by moving it half a timestep forward
 			v = v + Forces * dt / 2
 			r, v = leapfrog(r, Forces, v, dt)
 
 			#kickstart leapfrog for the black holes
-			for SMBH in SMBHS:
-				SMBH.v = SMBH.v + 0 * dt / 2
-				SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
+			#for SMBH in SMBHS:
+			#	SMBH.v = SMBH.v + 0 * dt / 2
+			#	SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
 		else:
 			r, v = leapfrog(r, Forces, v, dt)
 
 			#update location and velocity corresponding to the SMBHS
-			for SMBH in SMBHS:
-				SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
+			#for SMBH in SMBHS:
+			#	SMBH.r, _ = leapfrog(SMBH.r, 0, SMBH.v, dt)
 				
 
 		particles = updateparticles(r, v, particles)
