@@ -26,7 +26,7 @@ class BlackHole:
 		self.m = m
 
 		#softening parameter for force calculation
-		self.ε = 15
+		self.ε = ε
 		
 		
 
@@ -68,7 +68,7 @@ def setup_Galaxies(galaxy):
 	m = np.full(galaxy["DM"][1], galaxy["DM"][0] * galaxy["globals"]["M0"] / galaxy["DM"][1])
 	particles += [Particle(r[j] + galaxy["globals"]["R0"], v[j] + galaxy["globals"]["Vsys"], m=m[j]) for j in range(galaxy["DM"][1])]
 
-	SMBH = [BlackHole(galaxy["globals"]["R0"], galaxy["globals"]["Vsys"], 20 , galaxy["SMBH"][0] * galaxy["globals"]["M0"] / galaxy["SMBH"][1])]
+	SMBH = [BlackHole(galaxy["globals"]["R0"], galaxy["globals"]["Vsys"], 15 , galaxy["SMBH"][0] * galaxy["globals"]["M0"] / galaxy["SMBH"][1])]
 
 	return particles, SMBH
 
@@ -84,7 +84,7 @@ def updateparticles(r,v, particles):
 		p.v = v[indx]
 	return particles
 
-def GetSituation(r, colors):
+def GetSituation(R, colors):
 	plt.style.use("dark_background")
 	
 	fig = plt.figure(figsize=(10,10))
@@ -93,11 +93,15 @@ def GetSituation(r, colors):
 	ax.yaxis.pane.fill = False
 	ax.zaxis.pane.fill = False
 
-	for i, p in enumerate(particles):
-		ax.scatter(*p.r, color=colors[i], s=0.4)
+	for i, r in enumerate(R):
+		ax.scatter(*r, color=colors[i], s=0.4)
 	
 	ax.grid()
-	lim = (-30, 30)
+	
+	Max = np.max([np.max(R[:,i]) for i in range(R.shape[1])])
+	Min = np.min([np.min(R[:,i]) for i in range(R.shape[1])])
+
+	lim = (Min, Max)
 	ax.set(xlim=lim, ylim=lim, zlim=lim)
 
 	plt.show()
@@ -128,22 +132,21 @@ if __name__ == "__main__":
 	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
 	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
 	#respectively
-	Gal1 = { "Bulge" : (0.125, 500, 3.5, 1, "plummer"),
+	Gal1 = { "Bulge" : (0.125, 600, 3.5, 1, "plummer"),
 			 "Disk": (0.375, 2000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, -20]), "Vsys" : np.array([0, 0, 5]), "θ" : (0, 0, 0)}
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
 			}
-	'''
-	Gal2 = { "Bulge" : (0.075, 150, 3.5, 1, "plummer"),
-			 "Disk": (0.425, 900, [5, 12], 1, "disk"),
+
+	Gal2 = { "Bulge" : (0.125, 500, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 1000, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 7, "R0" : np.array([0, 0, 20]), "Vsys" : np.array([0, 0, -5]), "θ" : (0, 0, 0)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 50, 0]), "Vsys" : np.array([-10, -5, 0]), "θ" : (0, 0, 0)}
 			}
-	'''
 	#Runtime variables
-	frames = 600 #600
+	frames = 1000 #600
 	θ = 0.8
 	dt = 0.005
 	L = 300
@@ -154,7 +157,7 @@ if __name__ == "__main__":
 	particles = []
 	SMBHS = []
 	
-	for Gal in [Gal1]:#,Gal2]:
+	for Gal in [Gal1,Gal2]:
 		setup_out = setup_Galaxies(Gal)
 		particles += setup_out[0]
 		SMBHS += setup_out[1]
@@ -169,7 +172,7 @@ if __name__ == "__main__":
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		#GetSituation(r,colors)
+		GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
