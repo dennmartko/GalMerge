@@ -172,7 +172,7 @@ if __name__ == "__main__":
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		GetSituation(r,colors)
+		#GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
@@ -312,9 +312,27 @@ if __name__ == "__main__":
 				
 
 		particles = updateparticles(r, v, particles)
-			
+	
+	Ncells_in_frame = []
+	Np_in_frame = []
+	for o in SDC:
+		Ncells_in_frame += [len(o)]
+		count = 0
+		for i in o:
+			if i.daughters == []:
+				count += 1
+		Np_in_frame += [count]
+
+	#save file with properties of the run
+	propertiesfile = os.path.dirname(os.path.abspath(__file__)) + "/Properties.npz"
+	np.savez(propertiesfile, θ=np.array(SDR, dtype=object), dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
+	
+	#save file with Cell objects for each frame
 	cellfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
 	np.savez(cellfile, cells=np.array(SDC, dtype=object))
+	
+	#save file with r data
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
+	
 	AnimateOrbit(outfile, len(SDR))

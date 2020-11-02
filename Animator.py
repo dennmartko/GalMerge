@@ -10,7 +10,6 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 from tqdm import tqdm
 
-
 def remove_axes(ax, hidelabels=True):
     #remove panes
     ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
@@ -76,9 +75,10 @@ def AnimateOrbit(file,frames):
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
     
-    ax.set_xlim((-30,30))
-    ax.set_ylim((-30,30))
-    ax.set_zlim((-30,30))
+    lim = (-75, 75)
+    ax.set_xlim(lim)
+    ax.set_ylim(lim)
+    ax.set_zlim(lim)
     ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
     ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
     ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
@@ -119,8 +119,25 @@ def AnimateCells(file, frames):
 
 
 if __name__ == "__main__":
-    outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
-    AnimateOrbit(outfile, 100)
+    #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
+    #AnimateOrbit(outfile, 100)
+
+    style.use("dark_background")
+    fig = figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+    ax.set_xlim((-30,30))
+    ax.set_ylim((-30,30))
+    ax.set_zlim((-30,30))
+    ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
+    ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
+    ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
+    ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(0.00), fontsize=16, transform=ax.transAxes)
+    ax.text2D(0, 1, r"$dt = $" + "\n" + r"$\theta = $" + "\n" + "Number of Cells: \nBodies inside frame:", ha="left", va="center", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="none", ec="w", pad=0.5, transform=ax.transAxes))
+    ax.grid()
+    show()
 
     #outfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
     #AnimateCells(outfile, 100)
