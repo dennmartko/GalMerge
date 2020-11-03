@@ -143,10 +143,10 @@ if __name__ == "__main__":
 			 "Disk": (0.375, 1000, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([25, 25, 25]), "Vsys" : np.array([-10, -5, 0]), "θ" : (np.pi/4, 0, np.pi/4)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, np.pi/4)}
 			}
 	#Runtime variables
-	frames = 10 #600
+	frames = 1000 #600
 	θ = 0.8
 	dt = 0.005
 	L = 300
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 	Nparticles = len(particles)
 
-	colors = ['orange' if i == 10 else 'b' for i in range(Nparticles)]
+	colors = ['orange' if i == 10 else 'w' for i in range(Nparticles)]
 
 	r, v = particles2arr(particles)
 	SDV = [v] # Storage of Data for V
@@ -172,11 +172,11 @@ if __name__ == "__main__":
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		GetSituation(r,colors)
+		#GetSituation(r,colors)
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
-				if not os.isdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs"):
+				if not os.path.isdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs"):
 					os.mkdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs")
 				debugfile = os.path.dirname(os.path.abspath(__file__)) + '/' + "logs/debug_log.txt"
 				with open(debugfile, 'w') as f:
