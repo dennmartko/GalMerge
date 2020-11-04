@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 #own imports
+from utils import argv_parser, check_and_generate_fname, debugmsg
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
 from ODEInt import leapfrog
 from Animator import AnimateOrbit
@@ -124,6 +125,24 @@ if __name__ == "__main__":
 		9. r0 is the scaling radius of the Galaxy
 
 	'''
+	#parse command line arguments
+	N_CPU, fname, outpath, debug, verbose = argv_parser()
+
+	#create logfile for debugging purposes
+	if debug:
+		debugfile = "debug_log.txt"
+		debugpath = os.path.dirname(os.path.abspath(__file__)) + '/' + "logs"
+			
+		#IF the "logs" folder doesn't exist create it!
+		if not os.path.isdir(debugpath):
+				os.mkdir(debugpath)
+		else:
+			#if the a file with name of debugfile already exists generate a new name!
+			debugfile = check_and_generate_fname(debugfile, path=debugpath)
+
+		#write a debug message
+		debugmsg(os.path.join(debugpath, debugfile), "#####    START    #####", write_mode='w', verbose=verbose)
+
 	######################
 	#
 
@@ -148,9 +167,10 @@ if __name__ == "__main__":
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, 0)}
 			}
+	
 	#Runtime variables
-	frames = 2000 #600
-	θ = 0.75
+	frames = 10 #2000
+	θ = 1 #0.75
 	dt = 0.005
 	L = 300
 
@@ -160,6 +180,7 @@ if __name__ == "__main__":
 	particles = []
 	SMBHS = []
 	
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
 	for Gal in [Gal1,Gal2]:
 		setup_out = setup_Galaxies(Gal)
 		particles += setup_out[0]
@@ -171,32 +192,24 @@ if __name__ == "__main__":
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
 	SDC = []
-	for frame in tqdm(range(frames)):
-		# debugger code:
-		#colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
-		#GetSituation(r,colors, window=(-25, 65))
-		if frame == 0:
-			try:
-				debug = str(sys.argv[2]) == "--debug"
-				if not os.path.isdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs"):
-					os.mkdir(os.path.dirname(os.path.abspath(__file__)) + '/' + "logs")
-				debugfile = os.path.dirname(os.path.abspath(__file__)) + '/' + "logs/debug_log.txt"
-				with open(debugfile, 'w') as f:
-					f.write("START\n")
-				t_start = time.time()
-				t_end = t_start
-			except:
-				debug = False
 
-		if debug and frame % 1 == 0:
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
+	for frame in tqdm(range(frames)):
+		# debugging code:
+		if debug and verbose:
+			colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
+			GetSituation(r,colors, window=(-25, 65))
+
+		if debug and frame == 0:
+			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])
+			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame, 0), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
+			t_start = time.time()
+
+		if debug and frame % 1 == 0 and frame != 0:
 			t_end = time.time()
 			r, v = particles2arr(particles)
 			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])
-
-			#GetSituation(r,colors)
-
-			with open(debugfile, 'a') as f:
-				f.write("Np : {}, T : {} s\n".format(Np_in_frame, t_end - t_start))
+			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame, t_end - t_start), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
 			t_start = time.time()
 
 		# compute the location of the Center of Mass (COM) and total mass for the
@@ -216,10 +229,6 @@ if __name__ == "__main__":
 		################################################
 		##    COMPUTE FORCES USING MULTIPROCESSING ##
 		################################################
-		try:
-			N_CPU = int(sys.argv[1])
-		except:
-			N_CPU = cpu_count() #get the number of CPU cores
 		PLATFORM = sys.platform #get the patform on which this script is running
 
 		#NN defines the slice ranges for the particle array.
@@ -326,15 +335,21 @@ if __name__ == "__main__":
 		Np_in_frame += [count]
 
 	#save file with properties of the run
-	propertiesfile = os.path.dirname(os.path.abspath(__file__)) + "/Properties.npz"
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving properties...", write_mode='a', verbose=verbose) #write debug message
+	propertiesfile = outpath + "/Properties.npz"
 	np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
 	
 	#save file with Cell objects for each frame
-	cellfile = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
+	cellfile = outpath + "/Cells.npz"
 	np.savez(cellfile, cells=np.array(SDC, dtype=object))
 	
 	#save file with r data
-	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
+	outfile = outpath + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
 	
-	AnimateOrbit(os.path.dirname(os.path.abspath(__file__)), len(SDR), window=(-25, 65))
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
+	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
+
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "#####    END    #####", write_mode='a', verbose=verbose) #write debug message

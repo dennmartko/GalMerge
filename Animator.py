@@ -51,7 +51,7 @@ def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
     ax.plot3D([x+dx, x+dx], [y, y], [z, z+dz], **kwargs)
     return ax
 
-def AnimateOrbit(path, frames, fps=20, sleep=200, window=(-75, 75)):
+def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(-75, 75)):
     style.use('dark_background')
     
     def Frame(i):
@@ -88,10 +88,14 @@ def AnimateOrbit(path, frames, fps=20, sleep=200, window=(-75, 75)):
     ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
 
     ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
-    outfile = os.path.dirname(os.path.abspath(__file__)) + "/animations/animationTEST.mp4"
+    
+    #if the animations folder doesn't exist in path create it!
+    if not os.path.isdir(path + "/animations"):
+        os.mkdir(path + "/animations")
+    outfile = path + "/animations/" + filename + ".mp4"
     ani.save(outfile, fps = fps, writer='ffmpeg', dpi=fig.dpi)
 
-def AnimateCells(path, frames, fps=30, sleep=200, window=(-15, 15), dpi=300):
+def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, window=(-15, 15), dpi=300):
     style.use('dark_background')
 
     def Frame(i):
@@ -117,7 +121,11 @@ def AnimateCells(path, frames, fps=30, sleep=200, window=(-15, 15), dpi=300):
     t = np.arange(0, properties["dt"] * frames, properties["dt"])
 
     ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
-    outfile = os.path.dirname(os.path.abspath(__file__)) + "/animations/animationCellsTEST.mp4"
+    
+    #if the animations folder doesn't exist in path create it!
+    if not os.path.isdir(path + "/animations"):
+        os.mkdir(path + "/animations")
+    outfile = path + "/animations/" + filename + ".mp4"
     ani.save(outfile, fps = fps, writer='ffmpeg', dpi=dpi)
 
 
