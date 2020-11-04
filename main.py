@@ -84,7 +84,7 @@ def updateparticles(r,v, particles):
 		p.v = v[indx]
 	return particles
 
-def GetSituation(R, colors):
+def GetSituation(R, colors, window=None):
 	plt.style.use("dark_background")
 	
 	fig = plt.figure(figsize=(10,10))
@@ -97,12 +97,15 @@ def GetSituation(R, colors):
 		ax.scatter(*r, color=colors[i], s=0.4)
 	
 	ax.grid()
-	
-	Max = np.max([np.max(R[:,i]) for i in range(R.shape[1])])
-	Min = np.min([np.min(R[:,i]) for i in range(R.shape[1])])
 
-	lim = (Min, Max)
-	ax.set(xlim=lim, ylim=lim, zlim=lim)
+	if window is not None:
+		lim = window
+	else:
+		Max = np.max([np.max(R[:,i]) for i in range(R.shape[1])])
+		Min = np.min([np.min(R[:,i]) for i in range(R.shape[1])])
+		lim = (Min, Max)
+
+	ax.set(xlim=lim, ylim=lim, zlim=lim, xlabel=r"$x$", ylabel=r"$y$", zlabel=r"$z$")
 
 	plt.show()
 
@@ -132,22 +135,22 @@ if __name__ == "__main__":
 	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
 	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
 	#respectively
-	Gal1 = { "Bulge" : (0.125, 600, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 2000, [5, 20], 1, "disk"),
+	Gal1 = { "Bulge" : (0.125, 1200, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
 			}
 
-	Gal2 = { "Bulge" : (0.125, 500, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 1000, [4, 11], 1, "disk"),
+	Gal2 = { "Bulge" : (0.125, 1000, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 2000, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, np.pi/4)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, 0)}
 			}
 	#Runtime variables
-	frames = 1000 #600
-	θ = 0.8
+	frames = 2000 #600
+	θ = 0.75
 	dt = 0.005
 	L = 300
 
@@ -164,15 +167,14 @@ if __name__ == "__main__":
 
 	Nparticles = len(particles)
 
-	colors = ['orange' if i == 10 else 'w' for i in range(Nparticles)]
-
 	r, v = particles2arr(particles)
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
 	SDC = []
 	for frame in tqdm(range(frames)):
 		# debugger code:
-		#GetSituation(r,colors)
+		#colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
+		#GetSituation(r,colors, window=(-25, 65))
 		if frame == 0:
 			try:
 				debug = str(sys.argv[2]) == "--debug"
@@ -335,4 +337,4 @@ if __name__ == "__main__":
 	outfile = os.path.dirname(os.path.abspath(__file__)) + "/Data.npz"
 	np.savez(outfile,r=np.array(SDR, dtype=object))
 	
-	AnimateOrbit(os.path.dirname(os.path.abspath(__file__)), len(SDR))
+	AnimateOrbit(os.path.dirname(os.path.abspath(__file__)), len(SDR), window=(-25, 65))
