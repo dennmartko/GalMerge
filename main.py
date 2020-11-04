@@ -334,6 +334,11 @@ if __name__ == "__main__":
 				count += 1
 		Np_in_frame += [count]
 
+	#save file with r data
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
+	outfile = outpath + "/Data.npz"
+	np.savez(outfile,r=np.array(SDR, dtype=object))
+
 	#save file with properties of the run
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving properties...", write_mode='a', verbose=verbose) #write debug message
 	propertiesfile = outpath + "/Properties.npz"
@@ -343,11 +348,6 @@ if __name__ == "__main__":
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
 	cellfile = outpath + "/Cells.npz"
 	np.savez(cellfile, cells=np.array(SDC, dtype=object))
-	
-	#save file with r data
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
-	outfile = outpath + "/Data.npz"
-	np.savez(outfile,r=np.array(SDR, dtype=object))
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
 	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
