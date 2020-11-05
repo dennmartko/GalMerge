@@ -154,23 +154,23 @@ if __name__ == "__main__":
 	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
 	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
 	#respectively
-	Gal1 = { "Bulge" : (0.125, 1200, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
+	Gal1 = { "Bulge" : (0.125, 900, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 3000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
 			}
 
-	Gal2 = { "Bulge" : (0.125, 1000, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 2000, [4, 11], 1, "disk"),
+	Gal2 = { "Bulge" : (0.125, 750, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 1500, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
 			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, 0)}
 			}
 	
 	#Runtime variables
-	frames = 10 #2000
-	θ = 1 #0.75
+	frames = 2000
+	θ = 0.75
 	dt = 0.005
 	L = 300
 
@@ -347,7 +347,7 @@ if __name__ == "__main__":
 	#save file with r data
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
 	outfile = outpath + "/Data.npz"
-	np.savez(outfile,r=np.array(SDR, dtype=object))
+	np.savez(outfile, r=np.array(SDR, dtype=object), v=np.array(SDV, dtype=object), F=np.array(SDF, dtype=object))
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
 	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
