@@ -169,7 +169,7 @@ if __name__ == "__main__":
 			}
 	
 	#Runtime variables
-	frames = 10 #2000
+	frames = 5 #2000
 	θ = 0.75
 	dt = 0.005
 	L = 300
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
 	SDF = [] # Storage of Data for F
-	SDC = {"midR" : [], "L" : [], "leaf" : []} # Store the geometry of the Cells
+	SDC = [] # Storage of Cell objects
 	
 	#some properties
 	Ncells_in_frame = []
@@ -237,10 +237,7 @@ if __name__ == "__main__":
 		
 		#store cell geometry
 		if frame < 500:
-			SDC["midR"] += [o.midR for o in obj]
-			SDC["L"] += [o.L for o in obj]
-			SDC["leaf"] += [True if o.daughters == [] else False for o in obj]
-
+			SDC.append(obj)
 		#delete list of Cell objects (Cells can still be recovered by recursively stepping through the cells from ROOT)
 		del obj
 
@@ -364,11 +361,11 @@ if __name__ == "__main__":
 	#save file with Cell objects for each frame
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
 	cellfile = outpath + "/Cells.npz"
-	np.savez(cellfile, midR=np.array(SDC["midR"], dtype=object), L=np.array(SDC["L"], dtype=object), leaf=np.array(SDC["leaf"], dtype=object))
+	np.savez(cellfile, cells=np.array(SDC, dtype=object))
 	#delete large dict
 	del SDC
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
-	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
+	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65), debug=debug, verbose=verbose)
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "#####    END    #####", write_mode='a', verbose=verbose) #write debug message

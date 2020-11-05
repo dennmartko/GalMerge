@@ -134,7 +134,7 @@ def vesc_Hernquist(r, M, r0):
 # Function to generate non-radial velocity vectors
 def vcirc(r, M, r0, ζ=1, type_="plummer"):
 	if type_ == "disk":
-		mag_v = 30 * np.tanh(np.linalg.norm(r, axis=1) / r0[1])
+		mag_v = 2 / np.pi * 30 * np.tanh(np.linalg.norm(r, axis=1) / (r0[1] - r0[0]) / 2)
 		if abs(ζ) == 1:
 			vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
 			vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
