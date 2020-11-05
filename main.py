@@ -169,7 +169,7 @@ if __name__ == "__main__":
 			}
 	
 	#Runtime variables
-	frames = 2000
+	frames = 10 #2000
 	θ = 0.75
 	dt = 0.005
 	L = 300
@@ -191,8 +191,12 @@ if __name__ == "__main__":
 	r, v = particles2arr(particles)
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
-	SDC = [] # Storage of Data for Cells
 	SDF = [] # Storage of Data for F
+	SDC = {"midR" : [], "L" : [], "leaf" : []} # Store the geometry of the Cells
+	
+	#some properties
+	Ncells_in_frame = []
+	Np_in_frame = []
 
 	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
 	#GeneratorPlot(v, type_="velocity", outpath=".")
@@ -200,21 +204,22 @@ if __name__ == "__main__":
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
 	for frame in tqdm(range(frames)):
+		
+		Np_in_frame += [sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])]
+		
 		# debugging code:
 		if debug and verbose:
 			colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
 			GetSituation(r,colors, window=(-25, 65))
 
 		if debug and frame == 0:
-			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])
-			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame, 0), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
+			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], 0), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
 			t_start = time.time()
 
 		if debug and frame % 1 == 0 and frame != 0:
 			t_end = time.time()
 			r, v = particles2arr(particles)
-			Np_in_frame = sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])
-			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame, t_end - t_start), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
+			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], t_end - t_start), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
 			t_start = time.time()
 
 		# compute the location of the Center of Mass (COM) and total mass for the
@@ -228,7 +233,16 @@ if __name__ == "__main__":
 		#BUILD TREE
 		obj = []
 		Tree(ROOT, particles, obj)
-		SDC.append(obj)
+		Ncells_in_frame += [len(obj)]
+		
+		#store cell geometry
+		if frame < 500:
+			SDC["midR"] += [o.midR for o in obj]
+			SDC["L"] += [o.L for o in obj]
+			SDC["leaf"] += [True if o.daughters == [] else False for o in obj]
+
+		#delete list of Cell objects (Cells can still be recovered by recursively stepping through the cells from ROOT)
+		del obj
 
 				
 		################################################
@@ -332,21 +346,15 @@ if __name__ == "__main__":
 				
 
 		particles = updateparticles(r, v, particles)
-	
-	Ncells_in_frame = []
-	Np_in_frame = []
-	for o in SDC:
-		Ncells_in_frame += [len(o)]
-		count = 0
-		for i in o:
-			if i.daughters == []:
-				count += 1
-		Np_in_frame += [count]
 
+	
 	#save file with properties of the run
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving properties...", write_mode='a', verbose=verbose) #write debug message
 	propertiesfile = outpath + "/Properties.npz"
 	np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
+	#delete large lists
+	del Np_in_frame
+	del Ncells_in_frame
 	
 	#save file with r data
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
@@ -356,7 +364,9 @@ if __name__ == "__main__":
 	#save file with Cell objects for each frame
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
 	cellfile = outpath + "/Cells.npz"
-	np.savez(cellfile, cells=np.array(SDC, dtype=object))
+	np.savez(cellfile, midR=np.array(SDC["midR"], dtype=object), L=np.array(SDC["L"], dtype=object), leaf=np.array(SDC["leaf"], dtype=object))
+	#delete large dict
+	del SDC
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
 	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))

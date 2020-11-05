@@ -71,8 +71,9 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, rdd5, rdd6, rdd7, rdd8, particles1, part
 	return particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8 
 
 
-def Tree(node, particles, obj):
-	obj.append(node) # append the created node to the object list
+def Tree(node, particles, obj=None):
+	if obj is not None:
+		obj.append(node) # append the created node to the object list
 
 	# Hard copy the particle array
 	particles1 = particles.copy()
