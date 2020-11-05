@@ -46,7 +46,7 @@ class argv_parser(tuple):
 
         #argument dictionaries
         options = {"n" : self.n, "o" : self.o, "f" : self.f}
-        flags = {"d" : [self.d], "v" : [self.v], "dv" : [self.d, self.v], "vd" : [self.d, self.v], "-debug" : [self.d], "h" : [self.h], "-help" : [self.h]}
+        flags = {"d" : [self.d], "v" : [self.v], "dv" : [self.d, self.v], "vd" : [self.d, self.v], "-debug" : [self.d], "-verbose" : [self.v], "h" : [self.h], "-help" : [self.h]}
 
         #parser
         option = None
@@ -89,7 +89,7 @@ class argv_parser(tuple):
         print("""SYNTAX python3 main.py [flags] [options [arguments]]
     FLAGS:
         -d/--debug : Toggle debugging (default: False). If debugging is on it will store useful information in a log file.
-        -v : Controls the verbosity of the debugger.
+        -v/--verbose : Controls the verbosity of the program.
         -h/--help : Prints help.
     OPTIONS:
         -n [cores] : The number of cores to be used for force calculation (defaults to the total number of CPUs in the system).

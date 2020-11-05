@@ -15,7 +15,7 @@ from utils import argv_parser, check_and_generate_fname, debugmsg
 from BH import Particle, Cell, Tree, BHF_kickstart, connection_receiveAndClose, processes_joinAndTerminate
 from ODEInt import leapfrog
 from Animator import AnimateOrbit
-from GalGen import generate, rotate
+from GalGen import generate, rotate, GeneratorPlot
 
 
 class BlackHole:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
 			 "Disk": (0.375, 1500, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, 0)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, -np.pi/4, 0)}
 			}
 	
 	#Runtime variables
@@ -193,6 +193,10 @@ if __name__ == "__main__":
 	SDR = [r] # Storage of Data for R
 	SDC = [] # Storage of Data for Cells
 	SDF = [] # Storage of Data for F
+
+	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
+	#GeneratorPlot(v, type_="velocity", outpath=".")
+	#sys.exit()
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
 	for frame in tqdm(range(frames)):
