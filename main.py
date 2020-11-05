@@ -191,7 +191,8 @@ if __name__ == "__main__":
 	r, v = particles2arr(particles)
 	SDV = [v] # Storage of Data for V
 	SDR = [r] # Storage of Data for R
-	SDC = []
+	SDC = [] # Storage of Data for Cells
+	SDF = [] # Storage of Data for F
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
 	for frame in tqdm(range(frames)):
@@ -291,8 +292,12 @@ if __name__ == "__main__":
 			SDR.append(r) #x_{i+1}
 			#resync v and store
 			SDV.append(v + Forces * dt / 2) #v_{i+1} = v_{i+1/2} + a_{i+1}*Δt/2
+			#store Forces
+			SDF.append(Forces)
+		elif frame == 0:
+			#store Forces
+			SDF.append(Forces)
 
-		#integrate using leapfrog (assuming v is half a step out of sync)
 		for i in SMBHS:
 			#compute the force on supermassive black hole 'i'
 			Fg = np.zeros(3)
@@ -339,15 +344,15 @@ if __name__ == "__main__":
 	propertiesfile = outpath + "/Properties.npz"
 	np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
 	
-	#save file with Cell objects for each frame
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
-	cellfile = outpath + "/Cells.npz"
-	np.savez(cellfile, cells=np.array(SDC, dtype=object))
-	
 	#save file with r data
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
 	outfile = outpath + "/Data.npz"
 	np.savez(outfile, r=np.array(SDR, dtype=object), v=np.array(SDV, dtype=object), F=np.array(SDF, dtype=object))
+
+	#save file with Cell objects for each frame
+	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
+	cellfile = outpath + "/Cells.npz"
+	np.savez(cellfile, cells=np.array(SDC, dtype=object))
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
 	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
