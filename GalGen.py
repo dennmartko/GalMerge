@@ -7,6 +7,8 @@ from numba import njit
 #own imports
 import constants as const
 
+from main import setup_Galaxies, particles2arr
+
 
 ########################################
 ##    POSITION GENERATOR FUNCTIONS ##
@@ -215,10 +217,10 @@ def generate(N, Mtot, r0, ζ=1, type_="plummer"):
 ###################################################
 ##    FUNCTION FOR PLOTTING GENERATOR RESULTS ##
 ###################################################
-def GeneratorPlot(p, type_="spatial", histograms=False):
+def GeneratorPlot(p, type_="spatial", histograms=False, outfile=None):
     plt.style.use("dark_background")
-    fig = plt.figure(figsize=(10,10))
-    ax = fig.add_subplot(111, projection='3d')
+    fig1 = plt.figure(figsize=(10,10))
+    ax = fig1.add_subplot(111, projection='3d')
     ax.scatter(p[:,0], p[:,1], p[:,2], s=1, color='white')
     
     if type_ == "spatial":
@@ -231,39 +233,66 @@ def GeneratorPlot(p, type_="spatial", histograms=False):
     ax.zaxis.pane.fill = False
 
     if histograms and type_ == "spatial":
-        fig = plt.figure(figsize=(10,10))
+        fig2 = plt.figure(figsize=(10,10))
 
         histSetup = dict(bins=p.shape[0] // 100, color="white", density=True)
         
         #histogram for r
-        ax1 = fig.add_subplot(221)
+        ax1 = fig2.add_subplot(221)
         ax1.hist(np.linalg.norm(p, axis=1), **histSetup)
         ax1.set(xlabel=r"$r$ (kpc)")
 
         #histogram for phi
-        ax2 = fig.add_subplot(222)
+        ax2 = fig2.add_subplot(222)
         ax2.hist(np.arctan2(p[:,1], p[:,0]), **histSetup)
         ax2.set(xlabel=r"$\phi$ (rad)")
 
         #histogram for theta
-        ax3 = fig.add_subplot(223)
+        ax3 = fig2.add_subplot(223)
         ax3.hist(np.arctan2(np.linalg.norm(p[:,:-1], axis=1), p[:,2]), **histSetup)
         ax3.set(xlabel=r"$\theta$ (rad)")
 
     plt.show()
 
 if __name__ == "__main__":
-    Nparticles = 10000
-    Mtot = 10 ** 8
-    r0 = [2, 15] #20
+    #location and velocity of MACHO's
+	DM_r = np.array([[10,0,0],[0,10,0],[-10,0,0],[0,-10,0]])
+	DM_v = np.array([[0,30,0],[-30,0,0],[0,-30,0],[30,0,0]])
 
-    θ = (np.pi / 4 , np.pi / 4, np.pi / 4)
+    Gal1 = { "Bulge" : (0.125, 1200, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 4000, [5, 20], 1, "disk"),
+			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+			 "SMBH": (0.48, 1, None, None, None),
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
+			}
 
-    r, v = generate(Nparticles, Mtot, r0, type_="disk")
+    Gal2 = { "Bulge" : (0.125, 1000, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 2000, [4, 11], 1, "disk"),
+			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+			 "SMBH": (0.48, 1, None, None, None),
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, 0, 0)}
+			}
+
+    particles = []
+    SMBHS = []
+    for Gal in [Gal1]:#,Gal2]:
+		setup_out = setup_Galaxies(Gal)
+		particles += setup_out[0]
+		SMBHS += setup_out[1]
+
+    r, v = particles2arr(particles)
+
+    #Nparticles = 10000
+    #Mtot = 10 ** 8
+    #r0 = [2, 15] #20
+
+    #θ = (np.pi / 4 , np.pi / 4, np.pi / 4)
+
+    #r, v = generate(Nparticles, Mtot, r0, type_="disk")
     
     #rotate r and v
-    r = rotate(rotate(rotate(r, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
-    v = rotate(rotate(rotate(v, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
+    #r = rotate(rotate(rotate(r, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
+    #v = rotate(rotate(rotate(v, θ[0], axis='x'), θ[1], axis='y'), θ[2], axis='z')
     
     GeneratorPlot(r , type_="spatial", histograms=True)
     GeneratorPlot(v , type_="velocity")
