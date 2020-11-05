@@ -150,225 +150,233 @@ if __name__ == "__main__":
 	DM_r = np.array([[10,0,0],[0,10,0],[-10,0,0],[0,-10,0]])
 	DM_v = np.array([[0,30,0],[-30,0,0],[0,-30,0],[30,0,0]])
 
-	#syntax: "component" : (mass fraction, N, r0, ζ, model) / "globals" defines
-	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
-	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
-	#respectively
-	Gal1 = { "Bulge" : (0.125, 900, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 3000, [5, 20], 1, "disk"),
-			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
-			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
-			}
+	SDT = []
+	theta = np.arange(0.5,1.5,0.05)
 
-	Gal2 = { "Bulge" : (0.125, 750, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 1500, [4, 11], 1, "disk"),
-			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
-			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, -np.pi/4, 0)}
-			}
+	for θ in theta:
+		start_analysis = time.time()
+		#syntax: "component" : (mass fraction, N, r0, ζ, model) / "globals" defines
+		#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
+		#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
+		#respectively
+		Gal1 = { "Bulge" : (0.125, 900, 3.5, 1, "plummer"),
+				 "Disk": (0.375, 3000, [5, 20], 1, "disk"),
+				 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+				 "SMBH": (0.48, 1, None, None, None),
+				 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
+				}
+
+		Gal2 = { "Bulge" : (0.125, 750, 3.5, 1, "plummer"),
+				 "Disk": (0.375, 1500, [4, 11], 1, "disk"),
+				 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
+				 "SMBH": (0.48, 1, None, None, None),
+				 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, -np.pi/4, 0)}
+				}
 	
-	#Runtime variables
-	frames = 10 #2000
-	θ = 0.75
-	dt = 0.005
-	L = 300
+		#Runtime variables
+		frames = 200 #2000
+		#θ = 0.75
+		dt = 0.005
+		L = 300
 
-	#
-	######################
+		#
+		######################
 	
-	particles = []
-	SMBHS = []
+		particles = []
+		SMBHS = []
 	
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
-	for Gal in [Gal1,Gal2]:
-		setup_out = setup_Galaxies(Gal)
-		particles += setup_out[0]
-		SMBHS += setup_out[1]
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
+		for Gal in [Gal1,Gal2]:
+			setup_out = setup_Galaxies(Gal)
+			particles += setup_out[0]
+			SMBHS += setup_out[1]
 
-	Nparticles = len(particles)
+		Nparticles = len(particles)
 
-	r, v = particles2arr(particles)
-	SDV = [v] # Storage of Data for V
-	SDR = [r] # Storage of Data for R
-	SDF = [] # Storage of Data for F
-	SDC = {"midR" : [], "L" : [], "leaf" : []} # Store the geometry of the Cells
+		r, v = particles2arr(particles)
+		SDV = [v] # Storage of Data for V
+		SDR = [r] # Storage of Data for R
+		SDF = [] # Storage of Data for F
+		SDC = {"midR" : [], "L" : [], "leaf" : []} # Store the geometry of the Cells
 	
-	#some properties
-	Ncells_in_frame = []
-	Np_in_frame = []
+		#some properties
+		Ncells_in_frame = []
+		Np_in_frame = []
 
-	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
-	#GeneratorPlot(v, type_="velocity", outpath=".")
-	#sys.exit()
-
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
-	for frame in tqdm(range(frames)):
+		#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
+		#GeneratorPlot(v, type_="velocity", outpath=".")
+		#sys.exit()
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
+		for frame in tqdm(range(frames)):
 		
-		Np_in_frame += [sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])]
+			Np_in_frame += [sum([1 if (abs(rr[0]) < L / 2 and abs(rr[1]) < L / 2 and abs(rr[2]) < L / 2) else 0 for rr in r])]
 		
-		# debugging code:
-		if debug and verbose:
-			colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
-			GetSituation(r,colors, window=(-25, 65))
+			# debugging code:
+			if debug and verbose:
+				colors = ['r' if i == 10 else 'w' for i in range(Nparticles)]
+				GetSituation(r,colors, window=(-25, 65))
 
-		if debug and frame == 0:
-			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], 0), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
-			t_start = time.time()
+			if debug and frame == 0:
+				debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], 0), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
+				t_start = time.time()
 
-		if debug and frame % 1 == 0 and frame != 0:
-			t_end = time.time()
-			r, v = particles2arr(particles)
-			debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], t_end - t_start), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
-			t_start = time.time()
+			if debug and frame % 1 == 0 and frame != 0:
+				t_end = time.time()
+				r, v = particles2arr(particles)
+				debugmsg(os.path.join(debugpath, debugfile), "frame : {}, Np : {}, T : {} s".format(frame, Np_in_frame[frame], t_end - t_start), write_mode='a', verbose=verbose, writer=tqdm.write) #write debug message
+				t_start = time.time()
 
-		# compute the location of the Center of Mass (COM) and total mass for the
-		# ROOT cell
-		Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
-		Mgal = np.sum([p.m for p in particles])
+			# compute the location of the Center of Mass (COM) and total mass for the
+			# ROOT cell
+			Rgal_CM = np.sum([p.m * p.r for p in particles]) / np.sum([p.m for p in particles])
+			Mgal = np.sum([p.m for p in particles])
 
-		# initialize ROOT cell
-		ROOT = Cell(np.array([0, 0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
+			# initialize ROOT cell
+			ROOT = Cell(np.array([0, 0, 0]), L, parent=None, M=Mgal, R_CM=Rgal_CM)
 
-		#BUILD TREE
-		obj = []
-		Tree(ROOT, particles, obj)
-		Ncells_in_frame += [len(obj)]
+			#BUILD TREE
+			obj = []
+			Tree(ROOT, particles, obj)
+			#Ncells_in_frame += [len(obj)]
 		
-		#store cell geometry
-		if frame < 500:
-			SDC["midR"] += [o.midR for o in obj]
-			SDC["L"] += [o.L for o in obj]
-			SDC["leaf"] += [True if o.daughters == [] else False for o in obj]
+			#store cell geometry
+			#if frame < 500:
+			#	SDC["midR"] += [o.midR for o in obj]
+			#	SDC["L"] += [o.L for o in obj]
+			#	SDC["leaf"] += [True if o.daughters == [] else False for o in obj]
 
-		#delete list of Cell objects (Cells can still be recovered by recursively stepping through the cells from ROOT)
-		del obj
+			#delete list of Cell objects (Cells can still be recovered by recursively stepping through the cells from ROOT)
+			del obj
 
 				
-		################################################
-		##    COMPUTE FORCES USING MULTIPROCESSING ##
-		################################################
-		PLATFORM = sys.platform #get the patform on which this script is running
+			################################################
+			##    COMPUTE FORCES USING MULTIPROCESSING ##
+			################################################
+			PLATFORM = sys.platform #get the patform on which this script is running
 
-		#NN defines the slice ranges for the particle array.
-		#We want to split the particles array in N_CPU-1 parts, i.e.  the number of
-		#feasible subprocesses on this machine.
-		NN = int(Nparticles / (N_CPU - 1))
-		#If the platform is 'win32' we will use pipes.  The parent connector will be
-		#stored in the connections list.
-		if PLATFORM == 'win32':
-			connections = []
+			#NN defines the slice ranges for the particle array.
+			#We want to split the particles array in N_CPU-1 parts, i.e.  the number of
+			#feasible subprocesses on this machine.
+			NN = int(Nparticles / (N_CPU - 1))
+			#If the platform is 'win32' we will use pipes.  The parent connector will be
+			#stored in the connections list.
+			if PLATFORM == 'win32':
+				connections = []
 
-		processes = [] #array with process instances
+			processes = [] #array with process instances
 
-		#create a multiprocessing array for the force on each particle in shared
-		#memory
-		mp_Forces = Array(c_double, 3 * Nparticles)
-		#create a 3D numpy array sharing its memory location with the
-		#multiprocessing
-		#array
-		Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 3))
+			#create a multiprocessing array for the force on each particle in shared
+			#memory
+			mp_Forces = Array(c_double, 3 * Nparticles)
+			#create a 3D numpy array sharing its memory location with the
+			#multiprocessing
+			#array
+			Forces = np.frombuffer(mp_Forces.get_obj(), dtype=c_double).reshape((Nparticles, 3))
 
-		#spawn the processes
-		for i in range(N_CPU - 1):
-			#ensure that the last particle is also included when Nparticles / (N_CPU -
-			#1) is not an integer
-			if i == N_CPU - 2:
-				if PLATFORM == 'win32':
-					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
-					p.start() #start process
-					parent_conn.send(Forces[i * NN:]) #send Forces array through Pipe
-					connections.append(parent_conn)
+			#spawn the processes
+			for i in range(N_CPU - 1):
+				#ensure that the last particle is also included when Nparticles / (N_CPU -
+				#1) is not an integer
+				if i == N_CPU - 2:
+					if PLATFORM == 'win32':
+						parent_conn, child_conn = Pipe() #create a duplex Pipe
+						p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
+						p.start() #start process
+						parent_conn.send(Forces[i * NN:]) #send Forces array through Pipe
+						connections.append(parent_conn)
+					else:
+						p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i * NN:], θ=θ, SMBHS=SMBHS)) #spawn process
+						p.start() #start process
 				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:]), kwargs=dict(Forces=Forces[i * NN:], θ=θ, SMBHS=SMBHS)) #spawn process
-					p.start() #start process
-			else:
-				if PLATFORM == 'win32':
-					parent_conn, child_conn = Pipe() #create a duplex Pipe
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
-					p.start() #start process
-					parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
-					connections.append(parent_conn)
-				else:
-					p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ, SMBHS=SMBHS)) #spawn process
-					p.start() #start process
-			processes.append(p)
+					if PLATFORM == 'win32':
+						parent_conn, child_conn = Pipe() #create a duplex Pipe
+						p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(θ=θ, conn=child_conn, SMBHS=SMBHS)) #spawn process
+						p.start() #start process
+						parent_conn.send(Forces[i * NN:(i + 1) * NN]) #send Forces array through Pipe
+						connections.append(parent_conn)
+					else:
+						p = Process(target=BHF_kickstart, args=(ROOT, particles[i * NN:(i + 1) * NN]), kwargs=dict(Forces=Forces[i * NN:(i + 1) * NN], θ=θ, SMBHS=SMBHS)) #spawn process
+						p.start() #start process
+				processes.append(p)
 
-		#if platform is 'win32' => receive filled Forces arrays through Pipe
-		if PLATFORM == 'win32':
-			Forces = np.concatenate([connection_receiveAndClose(conn) for conn in connections], axis=0)
+			#if platform is 'win32' => receive filled Forces arrays through Pipe
+			if PLATFORM == 'win32':
+				Forces = np.concatenate([connection_receiveAndClose(conn) for conn in connections], axis=0)
 
-		#join and terminate all processes
-		processes_joinAndTerminate(processes)
+			#join and terminate all processes
+			processes_joinAndTerminate(processes)
 
-		####################
-		##    LEAPFROG    ##
-		####################
-		#storage
-		if frame % 1 == 0 and frame != 0:
-			SDR.append(r) #x_{i+1}
-			#resync v and store
-			SDV.append(v + Forces * dt / 2) #v_{i+1} = v_{i+1/2} + a_{i+1}*Δt/2
-			#store Forces
-			SDF.append(Forces)
-		elif frame == 0:
-			#store Forces
-			SDF.append(Forces)
+			####################
+			##    LEAPFROG    ##
+			####################
+			#storage
+			if frame % 1 == 0 and frame != 0:
+				SDR.append(r) #x_{i+1}
+				#resync v and store
+				SDV.append(v + Forces * dt / 2) #v_{i+1} = v_{i+1/2} + a_{i+1}*Δt/2
+				#store Forces
+				SDF.append(Forces)
+			elif frame == 0:
+				#store Forces
+				SDF.append(Forces)
 
-		for i in SMBHS:
-			#compute the force on supermassive black hole 'i'
-			Fg = np.zeros(3)
-			for j in SMBHS:
-				if i != j:
-					R = i.r - j.r
-					Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
+			for i in SMBHS:
+				#compute the force on supermassive black hole 'i'
+				Fg = np.zeros(3)
+				for j in SMBHS:
+					if i != j:
+						R = i.r - j.r
+						Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
 			
+				if frame == 0:
+					#kickstart leapfrog for the black holes by moving v half a step forward
+					i.v = i.v + Fg * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+					i.r = i.r + i.v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
+				else:
+					#update location and velocity corresponding to the SMBHS
+					# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
+					# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
+					i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
+
+
 			if frame == 0:
-				#kickstart leapfrog for the black holes by moving v half a step forward
-				i.v = i.v + Fg * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
-				i.r = i.r + i.v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
+				#kickstart v by moving it half a timestep forward
+				v = v + Forces * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+				r = r + v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
 			else:
-				#update location and velocity corresponding to the SMBHS
 				# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
 				# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
-				i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
-
-
-		if frame == 0:
-			#kickstart v by moving it half a timestep forward
-			v = v + Forces * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
-			r = r + v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
-		else:
-			# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
-			# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
-			r, v = leapfrog(r, Forces, v, dt)
+				r, v = leapfrog(r, Forces, v, dt)
 				
 
-		particles = updateparticles(r, v, particles)
-
+			particles = updateparticles(r, v, particles)
 	
-	#save file with properties of the run
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving properties...", write_mode='a', verbose=verbose) #write debug message
-	propertiesfile = outpath + "/Properties.npz"
-	np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
-	#delete large lists
-	del Np_in_frame
-	del Ncells_in_frame
+		#save file with properties of the run
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving properties...", write_mode='a', verbose=verbose) #write debug message
+		#propertiesfile = outpath + "/Properties.npz"
+		#np.savez(propertiesfile, θ=θ, dt = dt , NPinFrame=np.array(Np_in_frame, dtype=object), NCinFrame=np.array(Ncells_in_frame, dtype=object))
+		##delete large lists
+		#del Np_in_frame
+		#del Ncells_in_frame
 	
-	#save file with r data
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
-	outfile = outpath + "/Data.npz"
-	np.savez(outfile, r=np.array(SDR, dtype=object), v=np.array(SDV, dtype=object), F=np.array(SDF, dtype=object))
+		#save file with r data
+		if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving particle data...", write_mode='a', verbose=verbose) #write debug message
+		outfile = outpath + "/Data-{}.npz".format(θ)
+		np.savez(outfile, r=np.array(SDR, dtype=object), v=np.array(SDV, dtype=object), F=np.array(SDF, dtype=object))
 
-	#save file with Cell objects for each frame
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
-	cellfile = outpath + "/Cells.npz"
-	np.savez(cellfile, midR=np.array(SDC["midR"], dtype=object), L=np.array(SDC["L"], dtype=object), leaf=np.array(SDC["leaf"], dtype=object))
-	#delete large dict
-	del SDC
+		SDT.append(time.time()-start_analysis)
+
+		#save file with Cell objects for each frame
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "Saving cells...", write_mode='a', verbose=verbose) #write debug message
+		#cellfile = outpath + "/Cells.npz"
+		#np.savez(cellfile, midR=np.array(SDC["midR"], dtype=object), L=np.array(SDC["L"], dtype=object), leaf=np.array(SDC["leaf"], dtype=object))
+		#delete large dict
+		#del SDC
 	
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
-	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
+		#AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65))
 
-	if debug: debugmsg(os.path.join(debugpath, debugfile), "#####    END    #####", write_mode='a', verbose=verbose) #write debug message
+		#if debug: debugmsg(os.path.join(debugpath, debugfile), "#####    END    #####", write_mode='a', verbose=verbose) #write debug message
+
+	outfile = outpath + "/TimeAnalysis.npz"
+	np.savez(outfile, θ=theta, runtime=np.array(SDT, dtype=object))
