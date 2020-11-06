@@ -169,9 +169,9 @@ if __name__ == "__main__":
 			}
 	
 	#Runtime variables
-	frames = 5 #2000
+	frames = 1000 #2000
 	θ = 0.75
-	dt = 0.005
+	dt = 0.01 #0.005
 	L = 300
 
 	#
@@ -181,7 +181,7 @@ if __name__ == "__main__":
 	SMBHS = []
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
-	for Gal in [Gal1,Gal2]:
+	for Gal in [Gal1, Gal2]:
 		setup_out = setup_Galaxies(Gal)
 		particles += setup_out[0]
 		SMBHS += setup_out[1]
@@ -366,6 +366,6 @@ if __name__ == "__main__":
 	del SDC
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Producing animation...", write_mode='a', verbose=verbose) #write debug message
-	AnimateOrbit(outpath, len(SDR), filename=fname, window=(-25, 65), debug=debug, verbose=verbose)
+	AnimateOrbit(outpath, len(SDR), filename=fname, debug=debug, verbose=verbose)
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "#####    END    #####", write_mode='a', verbose=verbose) #write debug message

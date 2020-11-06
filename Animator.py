@@ -2,15 +2,13 @@ import numpy as np
 import os
 
 #plotting imports
-from matplotlib.pyplot import figure, style
+from matplotlib.pyplot import figure, style, show
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d.axes3d import Axes3D
+from mpl_toolkits.mplot3d import proj3d
 
 from tqdm import tqdm
-
-#debugging imports
 import gc
-from time import time
 
 def remove_axes(ax, hidelabels=True):
 	#remove panes
@@ -47,13 +45,13 @@ def axisEqual3D(ax):
 	ax.auto_scale_xyz(*np.column_stack((centers - r, centers + r)))
 	
 
-def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-25, 25)), debug=False, verbose=False):
+def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), axes_off=False, debug=False, verbose=False):
 	style.use('dark_background')
 	
 	def Frame(i):
 		del ax.collections[:]
 		gc.collect()
-		ax.scatter3D(*xdata[i].T, s=0.4, color='white')
+		stars = ax.scatter3D(*xdata[i].T, s=0.4, color='white')
 		txts[0].set_text(r"$t = {:.2f}$ Gyr".format(t[i]))
 		txts[1].set_text(r"$dt = {}$".format(properties['dt']) + "\n" + r"$\theta = {}$".format(properties['θ']) + "\n" + "Number of Cells: {} \nBodies inside frame: {}".format(properties['NCinFrame'][i],properties['NPinFrame'][i]))
 		
@@ -73,26 +71,27 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 
 	t = np.arange(0, properties['dt']*frames, properties['dt'])
 
-	fig = figure(figsize =(10,10))
+	fig = figure(figsize=(10,10))
 	ax = fig.add_subplot(111 , projection ='3d')
-	ax.xaxis.pane.fill = False
-	ax.yaxis.pane.fill = False
-	ax.zaxis.pane.fill = False
 
-	ax.set_xlim(window[0])
-	ax.set_ylim(window[1])
-	ax.set_zlim(window[2])
+	ax.set(xlim=window[0], ylim=window[1], zlim=window[2])
+	axisEqual3D(ax)
+
+	if axes_off:
+		remove_axes(ax)
+	else:
+		ax.xaxis.pane.fill = False
+		ax.yaxis.pane.fill = False
+		ax.zaxis.pane.fill = False
 	
-	ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
-	ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
-	ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
+		ax.set_xlabel(r"$x$ [kpc]", fontsize=15, labelpad=30)
+		ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
+		ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
 
 	stars = ax.scatter3D(*xdata[0].T, s=0.4, color='white')
 
-	axisEqual3D(ax)
-
 	txts = []
-	txts += [ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(t[i]), fontsize=16, transform=ax.transAxes)]
+	txts += [ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(t[0]), fontsize=16, transform=ax.transAxes)]
 	txts += [ax.text2D(0, 1, r"$dt = {}$".format(properties['dt']) + "\n" + r"$\theta = {}$".format(properties['θ']) + "\n" + "Number of Cells: {} \nBodies inside frame: {}".format(properties['NCinFrame'][0],properties['NPinFrame'][0]),
 				  ha="left", va="center", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="none", ec="w", pad=0.5))]
 
@@ -122,7 +121,7 @@ def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
 	
 	return ax
 
-def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, window=(-15, 15), dpi=300, debug=False, verbose=False):
+def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), dpi=300, debug=False, verbose=False):
 	style.use('dark_background')
 
 	def Frame(i):
@@ -152,8 +151,11 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 	fig = figure(figsize=(10,10))
 	ax = fig.add_subplot(111 , projection ='3d')
+	
+	ax.set(xlim=window[0], ylim=window[1], zlim=window[2])
+	axisEqual3D(ax)
+
 	remove_axes(ax)
-	ax.set(xlim=window, ylim=window, zlim=window)
 
 	txt = ax.text2D(x=0.75, y=1, s=r"$t = {:.2f}$ Gyr".format(0), fontsize=16, transform=ax.transAxes)
 
@@ -168,14 +170,7 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 if __name__ == "__main__":
 	path = os.path.dirname(os.path.abspath(__file__))
-	#AnimateOrbit(path, 1000, window=(-25, 65))
-	#AnimateOrbit(path, 10)
-	path += "/testdata"
-
-	for i in range(1):
-		s = time()
-		AnimateOrbit(path, 5, verbose=True) #, window=(-25, 65)
-		print(f"time: {time() - s}")
-
+	AnimateOrbit(path, 2000)
+	
 	#path = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
 	#AnimateCells(path, 100)

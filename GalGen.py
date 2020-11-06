@@ -134,7 +134,7 @@ def vesc_Hernquist(r, M, r0):
 # Function to generate non-radial velocity vectors
 def vcirc(r, M, r0, ζ=1, type_="plummer"):
 	if type_ == "disk":
-		mag_v = 2 / np.pi * 30 * np.tanh(np.linalg.norm(r, axis=1) / (r0[1] - r0[0]) / 2)
+		mag_v = 2 / np.pi * 30 * np.tanh(np.linalg.norm(r, axis=1) / ((r0[1] - r0[0]) / 2))
 		if abs(ζ) == 1:
 			vx = -1 * mag_v * ζ * r[:,1] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
 			vy = mag_v * ζ * r[:,0] / (r[:,0] ** 2 + r[:,1] ** 2) ** 0.5
@@ -230,18 +230,24 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 			mean_p = np.mean(p, axis=0)
 			max_std_p = np.max(np.std(p, axis=0))
 			xlim, ylim, zlim = np.array([mean_p - 2*max_std_p, mean_p + 2*max_std_p]).T
-		ax.set(xlabel=r"$x$ (kpc)", ylabel=r"$y$ (kpc)", zlabel=r"$z$ (kpc)", xlim=xlim, ylim=ylim, zlim=zlim)
+		ax.set(xlim=xlim, ylim=ylim, zlim=zlim)
+		ax.set_xlabel(r"$x$ [kpc]", fontsize=16)
+		ax.set_ylabel(r"$y$ [kpc]", fontsize=16)
+		ax.set_zlabel(r"$z$ [kpc]", fontsize=16)
 	elif type_ == "velocity":
-		ax.set(xlabel=r"$v_x$ (kpc/Gyr)", ylabel=r"$v_y$ (kpc/Gyr)", zlabel=r"$v_z$ (kpc/Gyr)")
+		ax.set_xlabel(r"$v_x$ [kpc/Gyr]", fontsize=16)
+		ax.set_ylabel(r"$v_y$ [kpc/Gyr]", fontsize=16)
+		ax.set_zlabel(r"$v_z$ [kpc/Gyr]", fontsize=16)
 
 	ax.xaxis.pane.fill = False
 	ax.yaxis.pane.fill = False
 	ax.zaxis.pane.fill = False
 
 	if histograms and type_ == "spatial":
+		plt.style.use("default")
 		fig2 = plt.figure(figsize=(10,10))
 
-		histSetup = dict(bins=p.shape[0] // 10, color="white", density=True)
+		histSetup = dict(bins=p.shape[0] // 100, density=True, rwidth=0.8) #color="white",
 		
 		#histogram for r
 		r = np.linalg.norm(p, axis=1)
@@ -252,29 +258,24 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 		r_ = r_[np.where(r_ < rlim[1])]
 		ax1 = fig2.add_subplot(221)
 		ax1.hist(r_, **histSetup)
-		ax1.set(xlabel=r"$r$ (kpc)", xlim=rlim)
+		ax1.set_xlabel(r"$r$ [kpc]", fontsize=16)
+		ax1.set_xlim(rlim)
 
 		#histogram for phi
 		phi = np.arctan2(p[:,1], p[:,0])
-		mean_phi = np.mean(phi)
-		std_phi = np.std(phi)
-		philim = (mean_phi - 2*std_phi, mean_phi + 2*std_phi)
-		phi_ = phi[np.where(phi > philim[0])]
-		phi_ = phi_[np.where(phi_ < philim[1])]
+		philim = [-np.pi, np.pi]
 		ax2 = fig2.add_subplot(222)
-		ax2.hist(phi_, **histSetup)
-		ax2.set(xlabel=r"$\phi$ (rad)", xlim=philim)
+		ax2.hist(phi, **histSetup)
+		ax2.set_xlabel(r"$\phi$ [rad]", fontsize=16)
+		ax2.set_xlim(philim)
 
 		#histogram for theta
 		theta = np.arctan2(np.linalg.norm(p[:,:-1], axis=1), p[:,2])
-		mean_theta = np.mean(theta)
-		std_theta = np.std(theta)
-		thetalim = (mean_theta - 2*std_theta, mean_theta + 2*std_theta)
-		theta_ = theta[np.where(theta > thetalim[0])]
-		theta_ = theta_[np.where(theta_ < thetalim[1])]
+		thetalim = [0, np.pi]
 		ax3 = fig2.add_subplot(223)
-		ax3.hist(theta_, **histSetup)
-		ax3.set(xlabel=r"$\theta$ (rad)", xlim=thetalim)
+		ax3.hist(theta, **histSetup)
+		ax3.set_xlabel(r"$\theta$ [rad]", fontsize=16)
+		ax3.set_xlim(thetalim)
 
 	if outpath is not None:
 		fig1.savefig(os.path.join(outpath, f"{type_}_scatter.pdf"), dpi=fig1.dpi, bbox_inches=fig1.get_tightbbox(fig1.canvas.get_renderer()))
