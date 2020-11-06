@@ -3,12 +3,23 @@ import os
 
 #plotting imports
 from matplotlib.pyplot import figure, style, show
+import matplotlib.colors as colors
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 
 from tqdm import tqdm
 import gc
+
+#debug imports
+import matplotlib.pyplot as plt
+
+def custom_cmap():
+	#trigonometric white -> red colormap
+	x = np.linspace(0, 1, 256)
+	color_list = np.array([np.ones(x.size), 1-x, 1-x, np.ones(x.size)]).T
+	cmp = colors.ListedColormap(color_list)
+	return cmp
 
 def remove_axes(ax, hidelabels=True):
 	#remove panes
@@ -45,13 +56,16 @@ def axisEqual3D(ax):
 	ax.auto_scale_xyz(*np.column_stack((centers - r, centers + r)))
 	
 
-def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), axes_off=False, debug=False, verbose=False):
+def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), axes_off=False, c_mode='off', debug=False, verbose=False):
 	style.use('dark_background')
 	
 	def Frame(i):
 		del ax.collections[:]
 		gc.collect()
-		stars = ax.scatter3D(*xdata[i].T, s=0.4, color='white')
+		if cdata is not None:
+			stars = ax.scatter3D(*rdata[i].T, s=0.4, c=cmags[i], cmap=cmap, norm=norm)
+		else:
+			stars = ax.scatter3D(*rdata[i].T, s=0.4, color='white')
 		txts[0].set_text(r"$t = {:.2f}$ Gyr".format(t[i]))
 		txts[1].set_text(r"$dt = {}$".format(properties['dt']) + "\n" + r"$\theta = {}$".format(properties['θ']) + "\n" + "Number of Cells: {} \nBodies inside frame: {}".format(properties['NCinFrame'][i],properties['NPinFrame'][i]))
 		
@@ -64,8 +78,20 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 		return (stars, *txts)
 
 	with np.load(path + "/Data.npz",allow_pickle=True) as f:
-		xdata = f["r"]
-	xdata = xdata.astype(float)
+		rdata = f["r"]
+		cdata = f[f"{c_mode}"] if c_mode != 'off' else None #load color data
+		
+	rdata = rdata.astype(float)
+	if cdata is not None:
+		cmap = custom_cmap()
+
+		cdata = cdata.astype(float)
+
+		#find normalization for colormap
+		cmags = np.linalg.norm(cdata, axis=2)
+		cmin = 0
+		cmax = 2 * np.mean(cmags.flatten())
+		norm = colors.Normalize(vmin=cmin, vmax=cmax)
 
 	properties = np.load(path + "/Properties.npz",allow_pickle=True)
 
@@ -88,7 +114,7 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 		ax.set_ylabel(r"$y$ [kpc]", fontsize=15, labelpad=30)
 		ax.set_zlabel(r"$z$ [kpc]", fontsize=15, labelpad=30)
 
-	stars = ax.scatter3D(*xdata[0].T, s=0.4, color='white')
+	stars = ax.scatter3D(*rdata[0].T, s=0.4, color='white')
 
 	txts = []
 	txts += [ax.text2D(0.75, 1, r"$t = {:.2f}$ Gyr".format(t[0]), fontsize=16, transform=ax.transAxes)]
@@ -100,7 +126,11 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 	#if the animations folder doesn't exist in path create it!
 	if not os.path.isdir(path + "/animations"):
 		os.mkdir(path + "/animations")
-	outfile = path + "/animations/" + filename + ".mp4"
+	
+	if c_mode != 'off':
+		outfile = path + "/animations/" + filename + f"_{c_mode}.mp4"
+	else:
+		outfile = path + "/animations/" + filename + ".mp4"
 	ani.save(outfile, fps = fps, writer='ffmpeg', dpi=fig.dpi)
 
 
@@ -169,8 +199,21 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 
 if __name__ == "__main__":
-	path = os.path.dirname(os.path.abspath(__file__))
-	AnimateOrbit(path, 2000)
+	path = os.path.dirname(os.path.abspath(__file__)) + "/testdata/run5/"
+	AnimateOrbit(path, 1000, verbose=True, c_mode='v')
 	
+	#with np.load(path + "/Data.npz",allow_pickle=True) as f:
+	#	cdata = f["F"]
+	#cdata = cdata.astype(float)
+	#Fmags = np.linalg.norm(cdata, axis=2).flatten()
+
+	#cmin = 0
+	#find average deviation from cmin
+	#cmax = 2 * np.mean(Fmags)
+
+	#n, _, _ = plt.hist(Fmags, bins=int(Fmags.size/500))
+	#plt.vlines(x=cmax, ymin=0, ymax=np.max(n))
+	#plt.show()
+
 	#path = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
 	#AnimateCells(path, 100)

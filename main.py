@@ -31,7 +31,7 @@ class BlackHole:
 		
 		
 
-def setup_Galaxies(galaxy):
+def setup_Galaxies(galaxy, seed=None):
 	'''
 		Nparticles : number of stars in the Galaxy
 		Mtot : total mass of stars in the Galaxy
@@ -46,6 +46,8 @@ def setup_Galaxies(galaxy):
 			(defaults to '1', i.e. anti-clockwise)
 		type_ : type of Galactic model to use (defaults to 'plummer')
 	'''
+	if seed is not None:
+		np.random.seed(seed)
 
 	particles = []
 	for i in ["Bulge", "Disk"]:
@@ -165,7 +167,7 @@ if __name__ == "__main__":
 			 "Disk": (0.375, 1500, [4, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (np.pi/4, -np.pi/4, 0)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (0, 0, 0)}
 			}
 	
 	#Runtime variables
@@ -182,7 +184,7 @@ if __name__ == "__main__":
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
 	for Gal in [Gal1, Gal2]:
-		setup_out = setup_Galaxies(Gal)
+		setup_out = setup_Galaxies(Gal, seed=42)
 		particles += setup_out[0]
 		SMBHS += setup_out[1]
 
@@ -198,9 +200,9 @@ if __name__ == "__main__":
 	Ncells_in_frame = []
 	Np_in_frame = []
 
-	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
-	#GeneratorPlot(v, type_="velocity", outpath=".")
-	#sys.exit()
+	GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
+	GeneratorPlot(v, type_="velocity", outpath=".")
+	sys.exit()
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
 	for frame in tqdm(range(frames)):
@@ -313,6 +315,7 @@ if __name__ == "__main__":
 			#store Forces
 			SDF.append(Forces)
 
+		F_BH = []
 		for i in SMBHS:
 			#compute the force on supermassive black hole 'i'
 			Fg = np.zeros(3)
@@ -320,17 +323,19 @@ if __name__ == "__main__":
 				if i != j:
 					R = i.r - j.r
 					Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
-			
+			F_BH.append(Fg)
+
+		for n, i in enumerate(SMBHS):
 			if frame == 0:
 				#kickstart leapfrog for the black holes by moving v half a step forward
-				i.v = i.v + Fg * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+				i.v = i.v + F_BH[n] * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
 				i.r = i.r + i.v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
 			else:
 				#update location and velocity corresponding to the SMBHS
 				# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
 				# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
-				i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
-
+				i.r, i.v = leapfrog(i.r, F_BH[n], i.v, dt)
+		del F_BH
 
 		if frame == 0:
 			#kickstart v by moving it half a timestep forward

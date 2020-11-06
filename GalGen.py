@@ -7,6 +7,7 @@ from numba import njit
 
 #own imports
 import constants as const
+from Animator import axisEqual3D
 
 
 
@@ -230,7 +231,9 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 			mean_p = np.mean(p, axis=0)
 			max_std_p = np.max(np.std(p, axis=0))
 			xlim, ylim, zlim = np.array([mean_p - 2*max_std_p, mean_p + 2*max_std_p]).T
-		ax.set(xlim=xlim, ylim=ylim, zlim=zlim)
+		#ax.set(xlim=xlim, ylim=ylim, zlim=zlim)
+		ax.set(xlim=(-25, 65), ylim=(-25, 65), zlim=(-15, 30))
+		axisEqual3D(ax)
 		ax.set_xlabel(r"$x$ [kpc]", fontsize=16)
 		ax.set_ylabel(r"$y$ [kpc]", fontsize=16)
 		ax.set_zlabel(r"$z$ [kpc]", fontsize=16)
@@ -253,7 +256,7 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 		r = np.linalg.norm(p, axis=1)
 		mean_r = np.mean(r)
 		std_r = np.std(r)
-		rlim = (mean_r - 2*std_r, mean_r + 2*std_r)
+		rlim = (mean_r - 2*std_r if (mean_r - 2*std_r) > 0 else 0, mean_r + 2*std_r)
 		r_ = r[np.where(r > rlim[0])]
 		r_ = r_[np.where(r_ < rlim[1])]
 		ax1 = fig2.add_subplot(221)
