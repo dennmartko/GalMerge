@@ -46,7 +46,7 @@ def setup_Galaxies(galaxy):
 			(defaults to '1', i.e. anti-clockwise)
 		type_ : type of Galactic model to use (defaults to 'plummer')
 	'''
-
+	np.random.seed(42) # fix the seed
 	particles = []
 	for i in ["Bulge", "Disk"]:
 		if galaxy[i][1] != 0:
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 		#Runtime variables
 		frames = 200 #2000
 		#θ = 0.75
-		dt = 0.005
+		dt = 0.01
 		L = 300
 
 		#
