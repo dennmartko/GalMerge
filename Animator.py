@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 
 #plotting imports
 from matplotlib.pyplot import figure, style, show
@@ -54,10 +55,18 @@ def axisEqual3D(ax):
 	maxsize = max(abs(sz))
 	r = maxsize/2
 	ax.auto_scale_xyz(*np.column_stack((centers - r, centers + r)))
-	
 
-def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), axes_off=False, c_mode='off', debug=False, verbose=False):
+
+def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), axes_off=False, c_mode='off', selection=None, debug=False, verbose=False):
 	style.use('dark_background')
+
+	#if the animations folder doesn't exist in path create it!
+	if not os.path.isdir(path + "/animations"):
+		os.mkdir(path + "/animations")
+
+	#if we want to save a selected subset of frames and 'animations/frames' doesn't exist in path create it!
+	if selection is not None and not os.path.isdir(path + "/animations/frames"):
+		os.mkdir(path + "/animations/frames")
 	
 	def Frame(i):
 		del ax.collections[:]
@@ -75,6 +84,15 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 			debugmsg(os.path.join(debugpath, debugfile), message, write_mode='a', verbose=verbose, writer=None)
 		elif verbose:
 			print(f"frame {i}")
+
+		#save the selected frames
+		if selection is not None:
+			if t[i] in selection:
+				if c_mode != 'off':
+					fig.savefig(path + "/animations/frames/" + filename + f"_{c_mode}_{t[i]}.pdf", dpi=fig.dpi)
+				else:
+					fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
+
 		return (stars, *txts)
 
 	with np.load(path + "/Data.npz",allow_pickle=True) as f:
@@ -123,10 +141,6 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 
 	ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
 	
-	#if the animations folder doesn't exist in path create it!
-	if not os.path.isdir(path + "/animations"):
-		os.mkdir(path + "/animations")
-	
 	if c_mode != 'off':
 		outfile = path + "/animations/" + filename + f"_{c_mode}.mp4"
 	else:
@@ -151,16 +165,24 @@ def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
 	
 	return ax
 
-def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), dpi=300, debug=False, verbose=False):
+def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, window=((-25, 65), (-25, 65), (-15, 30)), dpi=300, selection=None, debug=False, verbose=False):
 	style.use('dark_background')
+
+	#if the animations folder doesn't exist in path create it!
+	if not os.path.isdir(path + "/animations"):
+		os.mkdir(path + "/animations")
+
+	#if we want to save a selected subset of frames and 'animations/frames' doesn't exist in path create it!
+	if selection is not None and not os.path.isdir(path + "/animations/frames"):
+		os.mkdir(path + "/animations/frames")
 
 	def Frame(i):
 		del ax.collections[:]
 		gc.collect()
 		for k, cell in tqdm(enumerate(Cdata[i])):
-			if cell.L > 1 and cell.L < 2:
-				if k % 4 == 0:
-					plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
+			#if cell.L > 1 and cell.L < 2:
+			#	if k % 4 == 0:
+			plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
 		np.delete(Cdata, i, axis=0) #pop the list item
 		txt.set_text(r"$t = {:.2f}$ Gyr".format(t[i]))
 
@@ -170,6 +192,13 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 			debugmsg(os.path.join(debugpath, debugfile), message, write_mode='a', verbose=verbose, writer=tqdm.write)
 		elif verbose:
 			tqdm.write(f"frame {i}")
+
+		#save the selected frames
+		#if selection is not None:
+		#	if t[i] in selection:
+		#		fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
+		#		sys.exit()
+
 		return txt,
 
 	with np.load(path + "/Cells.npz", allow_pickle=True) as f:
@@ -191,29 +220,33 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 	ani = animation.FuncAnimation(fig, Frame, interval=sleep, frames=frames)
 	
-	#if the animations folder doesn't exist in path create it!
-	if not os.path.isdir(path + "/animations"):
-		os.mkdir(path + "/animations")
 	outfile = path + "/animations/" + filename + ".mp4"
 	ani.save(outfile, fps = fps, writer='ffmpeg', dpi=dpi)
 
 
 if __name__ == "__main__":
-	path = os.path.dirname(os.path.abspath(__file__)) + "/testdata/run5/"
-	AnimateOrbit(path, 1000, verbose=True, c_mode='v')
+	paths = [os.path.dirname(os.path.abspath(__file__)) + "/testdata/run6/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run7/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run8/"]
 	
-	#with np.load(path + "/Data.npz",allow_pickle=True) as f:
-	#	cdata = f["F"]
-	#cdata = cdata.astype(float)
-	#Fmags = np.linalg.norm(cdata, axis=2).flatten()
+	#make particle animations
+	#selection = [0, 2, 4, 6, 8, 9.99] #selection of frames we want to store separately
+	#c_modes = ["off", "v", "F"]
+	#for path in paths:
+	#	print(f"{path}")
+	#	for c_mode in c_modes:
+	#		print(f"{c_mode}")
+	#		AnimateOrbit(path, 1000, verbose=True, c_mode=c_mode, selection=selection, axes_off=True)
 
-	#cmin = 0
-	#find average deviation from cmin
-	#cmax = 2 * np.mean(Fmags)
+	#make cell animations
+	#selection = [0, 4.99] #selection of frames we want to store separately
+	#for path in paths:
+	#	print(f"{path}")
+	#	AnimateCells(path, 100, selection=selection, verbose=True)
 
-	#n, _, _ = plt.hist(Fmags, bins=int(Fmags.size/500))
-	#plt.vlines(x=cmax, ymin=0, ymax=np.max(n))
-	#plt.show()
-
-	#path = os.path.dirname(os.path.abspath(__file__)) + "/Cells.npz"
-	#AnimateCells(path, 100)
+	#NORMA CODE!!!
+	#make cell animations
+	#paths = ["/net/virgo01/data/users/lourens/run6/", "/net/virgo01/data/users/lourens/run7/", "/net/virgo01/data/users/lourens/run8/"]
+	#selection = [0, 4.99] #selection of frames we want to store separately
+	#for path in paths:
+	#	print(f"{path}")
+	#	AnimateCells(path, 100, selection=selection, verbose=True)
+	#	break

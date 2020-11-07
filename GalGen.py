@@ -231,8 +231,8 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 			mean_p = np.mean(p, axis=0)
 			max_std_p = np.max(np.std(p, axis=0))
 			xlim, ylim, zlim = np.array([mean_p - 2*max_std_p, mean_p + 2*max_std_p]).T
-		#ax.set(xlim=xlim, ylim=ylim, zlim=zlim)
-		ax.set(xlim=(-25, 65), ylim=(-25, 65), zlim=(-15, 30))
+		ax.set(xlim=xlim, ylim=ylim, zlim=zlim)
+		#ax.set(xlim=(-25, 65), ylim=(-25, 65), zlim=(-15, 30))
 		axisEqual3D(ax)
 		ax.set_xlabel(r"$x$ [kpc]", fontsize=16)
 		ax.set_ylabel(r"$y$ [kpc]", fontsize=16)
