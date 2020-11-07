@@ -171,9 +171,9 @@ if __name__ == "__main__":
 			}
 	
 	#Runtime variables
-	frames = 1000 #2000
+	frames = 1000
 	θ = 0.75
-	dt = 0.01 #0.005
+	dt = 0.01
 	L = 300
 
 	#
@@ -200,9 +200,9 @@ if __name__ == "__main__":
 	Ncells_in_frame = []
 	Np_in_frame = []
 
-	GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
-	GeneratorPlot(v, type_="velocity", outpath=".")
-	sys.exit()
+	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
+	#GeneratorPlot(v, type_="velocity", outpath=".")
+	#sys.exit()
 
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Starting frame iteration...", write_mode='a', verbose=verbose) #write debug message
 	for frame in tqdm(range(frames)):
