@@ -320,6 +320,7 @@ if __name__ == "__main__":
 				#store Forces
 				SDF.append(Forces)
 
+			F_BH = []
 			for i in SMBHS:
 				#compute the force on supermassive black hole 'i'
 				Fg = np.zeros(3)
@@ -327,17 +328,19 @@ if __name__ == "__main__":
 					if i != j:
 						R = i.r - j.r
 						Fg -= (const.G_ * j.m) * R / (np.linalg.norm(R) ** 2 + j.ε ** 2) ** (3 / 2)
-			
+				F_BH.append(Fg)
+
+			for n, i in enumerate(SMBHS):
 				if frame == 0:
 					#kickstart leapfrog for the black holes by moving v half a step forward
-					i.v = i.v + Fg * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
+					i.v = i.v + F_BH[n] * dt / 2 #v_{i+1/2} = v_{i} + a_{i}*Δt/2
 					i.r = i.r + i.v * dt #x_{i+1} = x_{i} + v_{i+1/2}*Δt
 				else:
 					#update location and velocity corresponding to the SMBHS
 					# v : v_{i+3/2} = v_{i+1/2} + a_{i+1}*Δt
 					# r : x_{i+2} = x_{i+1} + v_{i+3/2}*Δt
-					i.r, i.v = leapfrog(i.r, Fg, i.v, dt)
-
+					i.r, i.v = leapfrog(i.r, F_BH[n], i.v, dt)
+			del F_BH
 
 			if frame == 0:
 				#kickstart v by moving it half a timestep forward
