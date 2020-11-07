@@ -194,10 +194,17 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 			tqdm.write(f"frame {i}")
 
 		#save the selected frames
-		#if selection is not None:
-		#	if t[i] in selection:
-		#		fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
-		#		sys.exit()
+		if selection is not None:
+			if t[i] in selection:
+				fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
+
+		#save first and last frame then exit!
+		if t[i] == 0.01 or t[i] == 4.99:
+			fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
+			if t[i] == 4.99:
+				sys.exit()
+			else:
+				Frame(499)
 
 		return txt,
 
@@ -225,7 +232,7 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 
 if __name__ == "__main__":
-	paths = [os.path.dirname(os.path.abspath(__file__)) + "/testdata/run6/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run7/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run8/"]
+	#paths = [os.path.dirname(os.path.abspath(__file__)) + "/testdata/run6/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run7/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run8/"]
 	
 	#make particle animations
 	#selection = [0, 2, 4, 6, 8, 9.99] #selection of frames we want to store separately
@@ -244,9 +251,8 @@ if __name__ == "__main__":
 
 	#NORMA CODE!!!
 	#make cell animations
-	#paths = ["/net/virgo01/data/users/lourens/run6/", "/net/virgo01/data/users/lourens/run7/", "/net/virgo01/data/users/lourens/run8/"]
-	#selection = [0, 4.99] #selection of frames we want to store separately
-	#for path in paths:
-	#	print(f"{path}")
-	#	AnimateCells(path, 100, selection=selection, verbose=True)
-	#	break
+	paths = ["/net/virgo01/data/users/lourens/run6/", "/net/virgo01/data/users/lourens/run7/", "/net/virgo01/data/users/lourens/run8/"]
+	for path in paths:
+		print(f"{path}")
+		AnimateCells(path, 500, verbose=True)
+		break
