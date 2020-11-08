@@ -144,7 +144,7 @@ def AnimateOrbit(path, frames, filename="animation", fps=20, sleep=200, window=(
 		outfile = path + "/animations/" + filename + ".mp4"
 	ani.save(outfile, fps = fps, writer='ffmpeg', dpi=fig.dpi)
 
-
+#source: https://www.programmersought.com/article/10884559421/
 def plot_linear_cube(ax, midR, L, color=(.224, 1, .078 , 1)):
 	x, y, z = midR - L / 2
 	dx, dy, dz = [L] * 3
