@@ -186,7 +186,7 @@ if __name__ == "__main__":
 	
 	if debug: debugmsg(os.path.join(debugpath, debugfile), "Setting up Galaxies...", write_mode='a', verbose=verbose) #write debug message
 	for Gal in [Gal1, Gal2]:
-		setup_out = setup_Galaxies(Gal, seed=42)
+		setup_out = setup_Galaxies(Gal, seed=42) #we fix the seed of the randomizers used to generate the Galaxy such that our results are reproducible
 		particles += setup_out[0]
 		SMBHS += setup_out[1]
 
