@@ -8,3 +8,6 @@ To make a simulation change and edit `main.py`. This code accepts command line a
 - `animations/animation.mp4`: An animation of the simulation.
 
 `Animator.py` provides more possibilities for making simulations such as making an animation of the **cells**, toggling the grid on and off, coloring particles according to the magnitude of the gravitational force acting on it or its velocity etc.
+
+## System requirements:
+This code was checked to be compatible with both Windows and Linux and requires only the base packages from [Python 3.x](https://docs.python.org/3.8/) together with [numpy](https://numpy.org/), [matplotlib](https://matplotlib.org/), [tqdm](https://tqdm.github.io/) and [numba](https://numba.pydata.org/).
