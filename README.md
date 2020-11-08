@@ -12,5 +12,7 @@ To make a simulation change and edit `main.py`. This code accepts command line a
 ## Results
 Some results of our simulations can be found in the [simulation_results](https://github.com/dennmartko/GalMerge/tree/master/simulation_results) folder.
 
+The code used to plot some of the figures in the report can be found in the [report_plots](https://github.com/dennmartko/GalMerge/tree/master/report_plots) folder.
+
 ## System requirements:
 This code was checked to be compatible with both Windows and Linux and requires only the base packages from [Python 3.x](https://docs.python.org/3.8/) together with [numpy](https://numpy.org/), [matplotlib](https://matplotlib.org/), [tqdm](https://tqdm.github.io/) and [numba](https://numba.pydata.org/).
