@@ -44,6 +44,9 @@ class Particle(object):
 
 
 def rmParticles(rdd1, rdd2, rdd3, rdd4, rdd5, rdd6, rdd7, rdd8, particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8):
+	'''Effective elimination of stars (in rdd{i}) that have been detected to not be in a given cell {i}
+		As a result the stars in particles{i} that are inside cell{i} gets reduced in size / is updated
+	'''
 	# np.delete() does not work with empty lists
 	if len(rdd1) != 0:
 		particles1 = np.delete(particles1, rdd1, axis=0)
@@ -73,6 +76,9 @@ def rmParticles(rdd1, rdd2, rdd3, rdd4, rdd5, rdd6, rdd7, rdd8, particles1, part
 
 
 def Tree(node, particles, obj=None):
+	'''Tree generator of the Barnes-Hut Algorithm.
+		Cells are split to 2^d cells, with d=dimension, if more than 1 star has been detected within them.
+	'''
 	if obj is not None:
 		obj.append(node) # append the created node to the object list
 
@@ -128,7 +134,8 @@ def Tree(node, particles, obj=None):
 			rdd7app(indx)
 			rdd8app(indx)
 
-			num1, M1 = CM_Handler(num1,r,m,M1)
+			num1, M1 = CM_Handler(num1,r,m,M1)	# compute position center of mass nummerator and denominator. 
+												# Denominator is equal to the total mass M{i} of the ith quadrant or octant.
 		elif -1 < condr[0] < 0 and 1 > condr[1] > 0 and 1 > condr[2] > 0:
 			pcount += 1
 			rdd1app(indx)
@@ -215,6 +222,7 @@ def Tree(node, particles, obj=None):
 										np.array(rdd6),np.array(rdd7), np.array(rdd8), particles1, particles2, particles3, particles4, particles5, particles6, particles7, particles8)
 
 		# if a potential cell's mass is nonzero create it!
+		# This effectively prevents empty cells being created.
 		if M1 != 0:
 			newmidR, newL = NewCellGeom(node.midR, node.L, 1)
 			D1 = Cell(newmidR, newL, parent=node, M = M1, R_CM = num1 / M1)

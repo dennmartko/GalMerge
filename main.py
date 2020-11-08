@@ -21,7 +21,7 @@ from GalGen import generate, rotate, GeneratorPlot
 
 
 class BlackHole:
-	__slots__ = ('r', 'v', 'ε', 'm')
+	__slots__ = ('r', 'v', 'ε', 'm') # Reserve memory
 	def __init__(self, r, v, ε, m):
 		# Position, velocity and mass
 		self.r = r
@@ -48,10 +48,12 @@ def setup_Galaxies(galaxy, seed=None):
 			(defaults to '1', i.e. anti-clockwise)
 		type_ : type of Galactic model to use (defaults to 'plummer')
 	'''
+	# Fix the seed
 	if seed is not None:
 		np.random.seed(seed)
 
 	particles = []
+	# Generate stars in Bulge and Disk
 	for i in ["Bulge", "Disk"]:
 		if galaxy[i][1] != 0:
 			r, v = generate(galaxy[i][1], galaxy["globals"]["M0"], galaxy[i][2], ζ=galaxy[i][3], type_=galaxy[i][4])
@@ -73,6 +75,7 @@ def setup_Galaxies(galaxy, seed=None):
 	m = np.full(galaxy["DM"][1], galaxy["DM"][0] * galaxy["globals"]["M0"] / galaxy["DM"][1])
 	particles += [Particle(r[j] + galaxy["globals"]["R0"], v[j] + galaxy["globals"]["Vsys"], m=m[j]) for j in range(galaxy["DM"][1])]
 
+	# Create blackhole objects
 	SMBH = [BlackHole(galaxy["globals"]["R0"], galaxy["globals"]["Vsys"], 15 , galaxy["SMBH"][0] * galaxy["globals"]["M0"] / galaxy["SMBH"][1])]
 
 	return particles, SMBH
@@ -90,6 +93,10 @@ def updateparticles(r,v, particles):
 	return particles
 
 def GetSituation(R, colors, window=None):
+	'''Plotting function that plots a 3D view of a frame
+
+	Purpose: debugging
+	'''
 	plt.style.use("dark_background")
 	
 	fig = plt.figure(figsize=(10,10))
@@ -116,17 +123,20 @@ def GetSituation(R, colors, window=None):
 
 if __name__ == "__main__":
 	'''
+		GLOBAL INFORMATION
+		------------------
 
-		1. Nparticles indicates the amount of particles in the simulation recommended is an amount between 1000 and 10000 = 1k-10k
+		1. Nparticles indicates the amount of stars in the simulation recommended is an amount between 1000 and 15000 = 1k-15k
 		2. The amount of frames for test runs to observe any flaws should be between 70 and 200 to obtain reasonable computing time. (within 5mins to 1h)
 		3. Theta indicates the BH performance or approximation. The higher θ, the faster the algorithm is but less accurate. Recommended is: θ=[0.5,0.8]
 		4. The recommended timestep dt, based on obtaining smooth orbits, is recommended to be smaller than 0.01 Gyrs. This requirement is substantiated by the crossing time of the Galaxy.
 		5. The algorithm typically follows the following idea: GENERATE GALAXY + INITIAL CONDITIONS -> START COMPUTING FRAMES <--> (BARNES HUT ALGORITHM -> INTEGRATOR); --> MOVIE
-		5. A total stellar mass of M = 1E9 to 1E12 is recommended.
+		5. A total stellar mass of M = 1E8 to 1E12 is recommended. Magnitude difference between stars and Blackhole has to be atleast ~3.
 		6. The program automatically detects the maximumum number of possible cpu cores on your computer and will maximize its usage. WINDOWS, LINUX, and MAC OS are supported.
-		   If you wish to set this number manually you can provide it as an argument to the run, e.g. 'python3 main.py 2' to use two cores.
+		   If you wish to set this number manually you can provide it as an argument to the run, e.g. 'python3 main.py -n 4' to use four cores.
 		7. The Galactic model used to generate a Galaxy can be altered. Current options are: "plummer", "jaffe" and "hernquist".
 		9. r0 is the scaling radius of the Galaxy
+		10. L defines the size of the whole frame such that (x, y, z) goes from +L/2 to -L/2. Ensure that the collision is within this frame by tuning L.
 
 	'''
 	#parse command line arguments
@@ -176,7 +186,7 @@ if __name__ == "__main__":
 	frames = 1000
 	θ = 0.69
 	dt = 0.01
-	L= 300
+	L = 300
 
 	#
 	######################

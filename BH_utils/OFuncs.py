@@ -54,6 +54,7 @@ def get_condr(r, L, midR):
 
 
 def GForce(M, rp, Rcm, SMBHS, ε=0.1):
+	'''Force calculation for each particle'''
 	r = rp-Rcm
 	Fg = -1 * (const.G_ * M) * r / (np.linalg.norm(r) ** 2 + ε ** 2) ** (3 / 2) # ε is softening parameter defaulting to 0.1
 
@@ -68,6 +69,7 @@ def GForce(M, rp, Rcm, SMBHS, ε=0.1):
 
 @njit(fastmath=True)
 def BHF_handler(rp, Rcm, L, θ):
+	'''Calculation of the accuracy parameter θ given cell&particle parameters'''
 	r = rp - Rcm
 
 	D = (r[0] ** 2 + r[1] ** 2 + r[2] ** 2) ** (1 / 2)
