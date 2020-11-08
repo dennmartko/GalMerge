@@ -2,6 +2,8 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from matplotlib.pyplot import figure, show
 
+#function that was used for plotting figure 2 in the report
+
 def CellPlotter(cells, particles, L, save=False):
 	rectStyle = dict(fill=False, ec='lightgrey', lw=2, zorder=1)
 	scatterStyle = dict(color='k', s=2, zorder=2)

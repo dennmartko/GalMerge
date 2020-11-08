@@ -1,3 +1,5 @@
+# Module that defines physical constants and conversion constants used in our code.
+
 #Code for this class was obtained from:
 #https://stackoverflow.com/questions/41522890/how-to-save-frequently-used-physical-constants-in-python
 

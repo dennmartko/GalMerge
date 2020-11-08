@@ -1,19 +1,16 @@
+# Module to make animations of the data produced by main.py.
+
 import numpy as np
 import os
 import sys
+from tqdm import tqdm
+import gc
 
 #plotting imports
 from matplotlib.pyplot import figure, style, show
 import matplotlib.colors as colors
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d.axes3d import Axes3D
-from mpl_toolkits.mplot3d import proj3d
-
-from tqdm import tqdm
-import gc
-
-#debug imports
-import matplotlib.pyplot as plt
 
 def custom_cmap():
 	#trigonometric white -> red colormap
@@ -178,10 +175,9 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 
 	def Frame(i):
 		del ax.collections[:]
+		del ax.lines[:]
 		gc.collect()
 		for k, cell in tqdm(enumerate(Cdata[i])):
-			#if cell.L > 1 and cell.L < 2:
-			#	if k % 4 == 0:
 			plot_linear_cube(ax, cell.midR, cell.L, color=(.224, 1, .078 , 1))
 
 		txt.set_text(r"$t = {:.2f}$ Gyr".format(t[i]))
@@ -199,12 +195,12 @@ def AnimateCells(path, frames, filename="animationCells", fps=30, sleep=200, win
 				fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
 
 		#save first and last frame then exit!
-		if t[i] == 0.01 or t[i] == 4.99:
-			fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
-			if t[i] == 4.99:
-				sys.exit()
-			else:
-				Frame(499)
+		#if t[i] == 0.01 or t[i] == 4.99:
+		#	fig.savefig(path + "/animations/frames/" + filename + f"_{t[i]}.pdf", dpi=fig.dpi)
+		#	if t[i] == 4.99:
+		#		sys.exit()
+		#	else:
+		#		Frame(499)
 
 		return txt,
 
@@ -294,34 +290,27 @@ def AnimateAngularMomentum(path, frames, filename="animationLhist", fps=30, slee
 	ani.save(outfile, fps = fps, writer='ffmpeg', dpi=dpi)
 
 if __name__ == "__main__":
-	paths = [os.path.dirname(os.path.abspath(__file__)) + "/testdata/run6/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run7/", os.path.dirname(os.path.abspath(__file__)) + "/testdata/run8/"]
+	# CODE THAT CAN BE USED TO MAKE ANIMATIONS OF DATA PRODUCED BY main.py!
+
+	paths = [os.path.dirname(os.path.abspath(__file__))] #array storing paths to each location storing data which should be animated
 	
 	#make particle animations
-	#selection = [0, 2, 4, 6, 8, 9.99] #selection of frames we want to store separately
-	#c_modes = ["off", "v", "F"]
-	#for path in paths:
-	#	print(f"{path}")
-	#	for c_mode in c_modes:
-	#		print(f"{c_mode}")
-	#		AnimateOrbit(path, 1000, verbose=True, c_mode=c_mode, selection=selection, axes_off=True)
+	selection = [0, 2, 4, 6, 8, 9.99] #selection of frames we want to store separately
+	c_modes = ["off", "v", "F"]
+	for path in paths:
+		print(f"{path}")
+		for c_mode in c_modes:
+			print(f"{c_mode}")
+			AnimateOrbit(path, 1000, verbose=True, c_mode=c_mode, selection=selection, axes_off=True)
 
 	#make cell animations
-	#selection = [0, 4.99] #selection of frames we want to store separately
-	#for path in paths:
-	#	print(f"{path}")
-	#	AnimateCells(path, 100, selection=selection, verbose=True)
+	selection = [0, 4.99] #selection of frames we want to store separately
+	for path in paths:
+		print(f"{path}")
+		AnimateCells(path, 500, selection=selection, verbose=True)
 
 	#make angular momentum animations
 	selection = [0, 9.99]
 	for path in paths:
 		print(f"{path}")
 		AnimateAngularMomentum(path, 1000, selection = selection, verbose=True)
-		break
-
-	#NORMA CODE!!!
-	#make cell animations
-	#paths = ["/net/virgo01/data/users/lourens/run6/", "/net/virgo01/data/users/lourens/run7/", "/net/virgo01/data/users/lourens/run8/"]
-	#for path in paths:
-	#	print(f"{path}")
-	#	AnimateCells(path, 500, verbose=True)
-	#	break

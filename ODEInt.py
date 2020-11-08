@@ -1,5 +1,6 @@
+# Module containing functions used for integrating ODEs.
+
 import numpy as np
-from tqdm import tqdm, tqdm_gui
 from numba import jit,njit
 
 @njit

@@ -4,7 +4,7 @@ import time
 #imports from own modules
 import constants as const
 
-''' OPTIMIZED FUNCTIONS FOR TREE COMPUTATIONS '''
+''' OPTIMIZED FUNCTIONS FOR BH TREE COMPUTATIONS '''
 
 @njit
 def Tree_template_init():

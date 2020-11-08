@@ -1,3 +1,5 @@
+# This module contains all the functions and objects to run the Barnes Hut algorithm.
+
 import numpy as np
 import time
 
@@ -9,7 +11,6 @@ from ctypes import c_double
 import constants as const
 from BH_utils.OFuncs import Tree_template_init, CM_Handler, NewCellGeom, get_condr, GForce, BHF_handler
 from BH_utils.PFuncs import CellPlotter
-
 
 #Prototype of a cell object
 class Cell(object):

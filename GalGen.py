@@ -1,9 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 from mpl_toolkits.mplot3d import Axes3D
-from numba import njit
 
 #own imports
 import constants as const
@@ -287,9 +285,11 @@ def GeneratorPlot(p, window=None, type_="spatial", histograms=False, outpath=Non
 	plt.show()
 
 if __name__ == "__main__":
+	# EXAMPLE CODE!
+
 	Nparticles = 10000
 	Mtot = 10 ** 8
-	r0 = [2, 15] #20
+	r0 = [2, 15]
 
 	θ = (np.pi / 4 , np.pi / 4, np.pi / 4)
 

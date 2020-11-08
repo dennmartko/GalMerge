@@ -1,3 +1,5 @@
+# Module containing all the utilities used by our program.
+
 import os
 import sys
 from multiprocessing import cpu_count
@@ -111,5 +113,5 @@ def debugmsg(file, message, write_mode='a', verbose=False, writer=None):
 
 
 if __name__ == "__main__":
-    print(argv_parser())
-    print(check_and_generate_fname("debug_log.txt", "./logs/"))
+    print(argv_parser()) #code to check whether argv_parser works properly
+    print(check_and_generate_fname("debug_log.txt", "./logs/")) #code to check whether the 'check_and_generate_fname' function properly checks and selects new filenames when necessary

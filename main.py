@@ -1,4 +1,6 @@
-﻿import numpy as np
+﻿# Module containing the main body of our program. Running this code will yield the results obtained in our project.
+
+import numpy as np
 import time
 import os
 import sys
@@ -200,6 +202,7 @@ if __name__ == "__main__":
 	Ncells_in_frame = []
 	Np_in_frame = []
 
+	#uncomment to get plots of the intial conditions
 	#GeneratorPlot(r, type_="spatial", histograms=True, outpath=".")
 	#GeneratorPlot(v, type_="velocity", outpath=".")
 	#sys.exit()
