@@ -156,25 +156,25 @@ if __name__ == "__main__":
 	#the global variables corresponding to the galaxy: "M0" = total mass; "R0" =
 	#location; "Vsys" = systemic velocity; "θ" = rotation angles around (x, y, z)
 	#respectively
-	Gal1 = { "Bulge" : (0.125, 900, 3.5, 1, "plummer"),
-			 "Disk": (0.375, 3000, [5, 20], 1, "disk"),
+	Gal1 = { "Bulge" : (0.125, 1800, 3.5, 1, "plummer"),
+			 "Disk": (0.375, 6000, [5, 20], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([0, 0, 0]), "θ" : (0, 0, 0)}
+			 "globals" : {"M0" : 2 * 10 ** 8, "R0" : np.array([0, 0, 0]), "Vsys" : np.array([5, 5, 0]), "θ" : (0, 0, 0)}
 			}
 
-	Gal2 = { "Bulge" : (0.125, 750, 2, 1, "plummer"),
-			 "Disk": (0.375, 1500, [2, 11], 1, "disk"),
+	Gal2 = { "Bulge" : (0.125, 1500, 2, 1, "plummer"),
+			 "Disk": (0.375, 3000, [2, 11], 1, "disk"),
 			 "DM": (0.02, len(DM_r), [DM_r, DM_v], None, None),
 			 "SMBH": (0.48, 1, None, None, None),
-			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([30, 0, 0]), "Vsys" : np.array([-1, 2.5, 0]), "θ" : (np.pi/4, -np.pi/4, 0)}
+			 "globals" : {"M0" : 8 * 10 ** 7, "R0" : np.array([50, 25, 25]), "Vsys" : np.array([-10, -5, -5]), "θ" : (0, 0, 0)}
 			}
-	
+
 	#Runtime variables
 	frames = 1000
-	θ = 0.69 #0.75
+	θ = 0.69
 	dt = 0.01
-	L = 300
+	L= 300
 
 	#
 	######################
