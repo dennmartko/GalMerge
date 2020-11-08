@@ -1,4 +1,6 @@
-﻿import numpy as np
+﻿# File containing old code and the 2D implementation of Barnes Hut
+
+import numpy as np
 import time
 
 import sys
